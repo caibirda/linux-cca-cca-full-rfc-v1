@@ -881,7 +881,12 @@ static int get_sigframe(struct rt_sigframe_user_layout *user,
 	if (err)
 		return err;
 
-	sp = sp_top = sigsp(regs->sp, ksig);
+	if (current->is_shelter)
+	{
+		sp = sp_top = current->task_signal_stack_virt + SHELTER_TASK_SIGNAL_STACK_LENGTH;
+		printk("shelter output signal.c\n");
+	} else
+		sp = sp_top = sigsp(regs->sp, ksig);
 
 	sp = round_down(sp - sizeof(struct frame_record), 16);
 	user->next_frame = (struct frame_record __user *)sp;

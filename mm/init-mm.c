@@ -12,6 +12,7 @@
 #include <linux/user_namespace.h>
 #include <linux/ioasid.h>
 #include <asm/mmu.h>
+#include <linux/export.h>
 
 #ifndef INIT_MM_CONTEXT
 #define INIT_MM_CONTEXT(name)
@@ -44,6 +45,7 @@ struct mm_struct init_mm = {
 #endif
 	INIT_MM_CONTEXT(init_mm)
 };
+EXPORT_SYMBOL(init_mm);
 
 void setup_initial_init_mm(void *start_code, void *end_code,
 			   void *end_data, void *brk)

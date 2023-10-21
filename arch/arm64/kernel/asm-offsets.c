@@ -40,6 +40,9 @@ int main(void)
   DEFINE(TSK_TI_SCS_SP,		offsetof(struct task_struct, thread_info.scs_sp));
 #endif
   DEFINE(TSK_STACK,		offsetof(struct task_struct, stack));
+  DEFINE(TSK_IS_SHELTER,		offsetof(struct task_struct, is_shelter));
+  DEFINE(TSK_FD_CMA,		offsetof(struct task_struct, fd_cma));
+  DEFINE(TSK_GPT_ID,		offsetof(struct task_struct, gpt_id));
 #ifdef CONFIG_STACKPROTECTOR
   DEFINE(TSK_STACK_CANARY,	offsetof(struct task_struct, stack_canary));
 #endif

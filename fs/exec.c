@@ -74,6 +74,7 @@
 #include "internal.h"
 
 #include <trace/events/sched.h>
+#include <linux/mman.h>
 
 static int bprm_creds_from_file(struct linux_binprm *bprm);
 
@@ -837,6 +838,11 @@ int setup_arg_pages(struct linux_binprm *bprm,
 	vma->vm_flags &= ~VM_STACK_INCOMPLETE_SETUP;
 
 	stack_expand = 131072UL; /* randomly 32*4k (or 2*64k) pages */
+	if(current->is_shelter){
+		printk("shelter output exec.c\n");
+		stack_expand = 1048576UL;// 256 pages;
+	}
+		
 	stack_size = vma->vm_end - vma->vm_start;
 	/*
 	 * Align this down to a page boundary as expand_stack
@@ -858,6 +864,16 @@ int setup_arg_pages(struct linux_binprm *bprm,
 
 out_unlock:
 	mmap_write_unlock(mm);
+	//1.stack; allocate cma memory to the first vma expand stack and construct page tables
+	//If epxand stack later use, we still use cma memory to allocate page in page fault handler
+	if (current->is_shelter)
+	{	
+		unsigned long shelter_stack_start = vma->vm_start;
+		size_t shelter_stacksize = vma->vm_end-vma->vm_start;
+		// vm_munmap(shelter_stack_start, shelter_stacksize);
+		ksys_mmap_pgoff(shelter_stack_start, shelter_stacksize,
+						PROT_READ | PROT_WRITE, MAP_FIXED | MAP_SHARED, current->fd_cma, 0);
+	}	
 	return ret;
 }
 EXPORT_SYMBOL(setup_arg_pages);
@@ -2021,7 +2037,7 @@ out_ret:
 	return retval;
 }
 
-static int do_execve(struct filename *filename,
+int do_execve(struct filename *filename,
 	const char __user *const __user *__argv,
 	const char __user *const __user *__envp)
 {

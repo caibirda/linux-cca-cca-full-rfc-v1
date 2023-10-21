@@ -422,6 +422,14 @@ alternative_else_nop_endif
 	ldp	x28, x29, [sp, #16 * 14]
 
 	.if	\el == 0
+    ldr_this_cpu    tsk, __entry_task, x20
+    ldr x21, [tsk, #TSK_IS_SHELTER]
+    cbnz  x21, 7f
+    // sub sp, sp, #PT_REGS_SIZE
+    ldp x20, x21, [sp, #16 * 10] //restore x20, x21, x28
+    ldr x28, [sp, #16 * 14]
+    // add sp, sp, #PT_REGS_SIZE
+
 alternative_if_not ARM64_UNMAP_KERNEL_AT_EL0
 	ldr	lr, [sp, #S_LR]
 	add	sp, sp, #PT_REGS_SIZE		// restore sp
@@ -446,6 +454,17 @@ alternative_else_nop_endif
 	eret
 	.endif
 	sb
+7:  //shelter_enter
+    mov x14, tsk
+    // sub sp, sp, #PT_REGS_SIZE
+    ldp x20, x21, [sp, #16 * 10]
+    ldr x28, [sp, #16 * 14]
+    // add sp, sp, #PT_REGS_SIZE
+    mov x13, x0
+    mov     x0, #0x80000000
+    add     x0, x0,#0xFF1
+    smc     #0
+
 	.endm
 
 #ifdef CONFIG_ARM64_SW_TTBR0_PAN

@@ -1289,6 +1289,7 @@ asmlinkage long sys_ni_syscall(void);
 ssize_t ksys_write(unsigned int fd, const char __user *buf, size_t count);
 int ksys_fchown(unsigned int fd, uid_t user, gid_t group);
 ssize_t ksys_read(unsigned int fd, char __user *buf, size_t count);
+int ksys_ioctl(unsigned int fd, unsigned int cmd, compat_ulong_t arg);
 void ksys_sync(void);
 int ksys_unshare(unsigned long unshare_flags);
 int ksys_setsid(void);

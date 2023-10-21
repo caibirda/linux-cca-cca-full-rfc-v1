@@ -72,6 +72,7 @@
 #include <linux/uaccess.h>
 #include <asm/unistd.h>
 #include <asm/mmu_context.h>
+#include <linux/arm-smccc.h>
 
 /*
  * The default value should be high enough to not crash a system that randomly
@@ -915,6 +916,13 @@ void __noreturn do_exit(long code)
 	exit_rcu();
 	exit_tasks_rcu_finish();
 
+	//shelter_task_exit
+	if(tsk->is_shelter)
+	{
+		printk("shelter output exit.c 1\n");
+		struct arm_smccc_res smccc_res;
+		arm_smccc_smc(0x80000FFF, (unsigned long) tsk, tsk->pid, 0, 0, 0, 0, 0, &smccc_res);
+	}
 	lockdep_free_task(tsk);
 	do_task_dead();
 }
@@ -1009,6 +1017,15 @@ do_group_exit(int exit_code)
 		spin_unlock_irq(&sighand->siglock);
 	}
 
+	if(current->is_shelter)
+	{
+		printk("shelter output exit.c 2\n");
+		struct arm_smccc_res smccc_res;
+		//shelter destruct
+		arm_smccc_smc(0x80000FF0, (unsigned long) current, current->pid, 0, 0, 0, 0, 0, &smccc_res);
+		//mark the CMA memory that can be released. ENC_MARK_RELEASE	
+		ksys_ioctl(current->fd_cma, 0x80000F03, 0);	
+	}
 	do_exit(exit_code);
 	/* NOTREACHED */
 }
