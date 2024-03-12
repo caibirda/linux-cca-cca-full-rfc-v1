@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0
 
 #include <linux/compiler.h>
+#include <linux/syscalls.h>
 #include <linux/context_tracking.h>
 #include <linux/errno.h>
 #include <linux/nospec.h>
@@ -204,7 +205,9 @@ void do_el0_svc(struct pt_regs *regs)
 	{
 		//trap to EL3 to create the new shelter app environment. ENC_NEW_TEST 0x80000FFE
 		printk("shelter output syscall.c\n");
+		printk("origin gpt_id is %d\n",gpt_id);
 		gpt_id = ksys_ioctl(current->fd_cma, 0x80000FFE, 0);
+		printk("shelter output syscall.c but after ksys_ioctl, gpt_id is %d\n", gpt_id);
 		if(gpt_id<= 0)
 		{
 			current->is_shelter = 0;
@@ -223,6 +226,10 @@ void do_el0_svc(struct pt_regs *regs)
 		printk("tid:%d, shelter shared addr:%lx, singal_stack addr:%lx\n", current->pid, task_shared_virt, task_singal_stack_virt);
 		//enc_nc_ns
 		arm_smccc_smc(0x80000FFD, current->pid, task_shared_virt, task_singal_stack_virt, 0, 0, 0, 0, &smccc_res);
+		printk("exit do_el0_svc\n");
+		unsigned long elr_el1_reg;
+		asm volatile("mrs %0, elr_el1" : "=r" (elr_el1_reg));
+		printk("elr_el1:%lx\n", elr_el1_reg);
 	}
 	else if (current->is_shelter && sysno != 0x62)
 	{

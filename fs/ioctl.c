@@ -907,7 +907,8 @@ long compat_ptr_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 }
 EXPORT_SYMBOL(compat_ptr_ioctl);
 
-int ksys_ioctl(unsigned int fd, unsigned int cmd, compat_ulong_t arg)
+COMPAT_SYSCALL_DEFINE3(ioctl, unsigned int, fd, unsigned int, cmd,
+		       compat_ulong_t, arg)
 {
 	struct fd f = fdget(fd);
 	int error;
@@ -975,9 +976,25 @@ int ksys_ioctl(unsigned int fd, unsigned int cmd, compat_ulong_t arg)
 
 	return error;
 }
-COMPAT_SYSCALL_DEFINE3(ioctl, unsigned int, fd, unsigned int, cmd,
-		       compat_ulong_t, arg)
+
+int ksys_ioctl(unsigned int fd, unsigned int cmd, unsigned long arg)
 {
-	return ksys_ioctl(fd, cmd, arg);
+	struct fd f = fdget(fd);
+	int error;
+
+	if (!f.file)
+		return -EBADF;
+
+	error = security_file_ioctl(f.file, cmd, arg);
+	if (error)
+		goto out;
+
+	error = do_vfs_ioctl(f.file, fd, cmd, arg);
+	if (error == -ENOIOCTLCMD)
+		error = vfs_ioctl(f.file, cmd, arg);
+
+out:
+	fdput(f);
+	return error;
 }
 #endif
