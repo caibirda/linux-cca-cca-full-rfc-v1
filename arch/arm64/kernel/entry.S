@@ -459,7 +459,8 @@ alternative_else_nop_endif
     // sub sp, sp, #PT_REGS_SIZE
     ldp x20, x21, [sp, #16 * 10]
     ldr x28, [sp, #16 * 14]
-    // add sp, sp, #PT_REGS_SIZE
+	ldr	lr, [sp, #S_LR]
+    add sp, sp, #PT_REGS_SIZE
     mov x13, x0
     mov     x0, #0x80000000
     add     x0, x0,#0xFF1
