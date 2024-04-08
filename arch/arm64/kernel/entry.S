@@ -65,6 +65,13 @@
 	tbnz	x0, #THREAD_SHIFT, 0f
 	sub	x0, sp, x0			// x0'' = sp' - x0' = (sp + x0) - sp = x0
 	sub	sp, sp, x0			// sp'' = sp' - x0 = (sp + x0) - x0 = sp
+	.if \el ==0
+	.if \regsize == 64
+	str	lr, [sp, #S_LR]
+	bl check_func_\label
+	ldr	lr, [sp, #S_LR]
+	.endif
+	.endif
 	b	el\el\ht\()_\regsize\()_\label
 
 0:
@@ -97,10 +104,57 @@
 	sub	sp, sp, x0
 	mrs	x0, tpidrro_el0
 #endif
+	.if \el ==0
+	.if \regsize == 64
+	str	lr, [sp, #S_LR]
+	bl check_func_\label
+	ldr lr, [sp, #S_LR]
+	.endif
+	.endif
 	b	el\el\ht\()_\regsize\()_\label
 .org .Lventry_start\@ + 128	// Did we overflow the ventry slot?
 	.endm
 
+enclave_ventry_sync:
+	mov		x14, xzr
+	mov		x13, x0
+	mov     x0, #0x80000000                      
+    add     x0, x0,#0xF00
+    smc     #0
+	ldr		lr, [sp, #S_LR]
+	ldp 	x28, x29, [sp, #16 * 14]
+	b 		el0t_64_sync
+
+enclave_ventry_irq:
+	mov		x14, 0x80
+	mov		x13, x0
+	mov     x0, #0x80000000                      
+    add     x0, x0,#0xF00
+    smc     #0
+	ldr		lr, [sp, #S_LR]
+	ldp 	x28, x29, [sp, #16 * 14]
+	b 		el0t_64_irq
+
+enclave_ventry_fiq:
+	mov		x14, 0x100
+	mov		x13, x0
+	mov     x0, #0x80000000                      
+    add     x0, x0,#0xF00
+    smc     #0
+	ldr		lr, [sp, #S_LR]
+	ldp 	x28, x29, [sp, #16 * 14]
+	b 		el0t_64_fiq
+
+enclave_ventry_error:
+	mov		x14, 0x180
+	mov		x13, x0
+	mov     x0, #0x80000000                      
+    add     x0, x0,#0xF00
+    smc     #0
+	ldr		lr, [sp, #S_LR]
+	ldp 	x28, x29, [sp, #16 * 14]
+	b 		el0t_64_error
+	
 	.macro tramp_alias, dst, sym, tmp
 	mov_q	\dst, TRAMP_VALIAS
 	adr_l	\tmp, \sym
@@ -108,6 +162,38 @@
 	adr_l	\tmp, .entry.tramp.text
 	sub	\dst, \dst, \tmp
 	.endm
+
+check_func_sync:
+	stp x28, x29, [sp, #16 * 14]
+	ldr_this_cpu    x28, __entry_task, x29
+    ldr x29, [x28, #TSK_IS_SHELTER]
+	cbnz  x29, enclave_ventry_sync
+	ldp x28, x29, [sp, #16 * 14]
+	ret
+
+check_func_irq:
+	stp x28, x29, [sp, #16 * 14]
+	ldr_this_cpu    x28, __entry_task, x29
+    ldr x29, [x28, #TSK_IS_SHELTER]
+	cbnz  x29, enclave_ventry_irq
+	ldp x28, x29, [sp, #16 * 14]
+	ret
+
+check_func_fiq:
+	stp x28, x29, [sp, #16 * 14]
+	ldr_this_cpu    x28, __entry_task, x29
+    ldr x29, [x28, #TSK_IS_SHELTER]
+	cbnz  x29, enclave_ventry_fiq
+	ldp x28, x29, [sp, #16 * 14]
+	ret
+
+check_func_error:
+	stp x28, x29, [sp, #16 * 14]
+	ldr_this_cpu    x28, __entry_task, x29
+    ldr x29, [x28, #TSK_IS_SHELTER]
+	cbnz  x29, enclave_ventry_error
+	ldp x28, x29, [sp, #16 * 14]
+	ret
 
 	/*
 	 * This macro corrupts x0-x3. It is the caller's duty  to save/restore
