@@ -869,7 +869,7 @@ out_unlock:
 	if (current->is_shelter)
 	{	
 		unsigned long shelter_stack_start = vma->vm_start;
-		unsigned long shelter_stack_end = vma->vm_end - ((vm->end - mm->arg_start) / PAGE_SIZE + 1) * PAGE_SIZE;
+		unsigned long shelter_stack_end = vma->vm_end - ((vma->vm_end - mm->arg_start) / PAGE_SIZE + 1) * PAGE_SIZE;
 		size_t shelter_stacksize = shelter_stack_end - shelter_stack_start;
 		// vm_munmap(shelter_stack_start, shelter_stacksize);
 		ksys_mmap_pgoff(shelter_stack_start, shelter_stacksize,
