@@ -759,7 +759,6 @@ struct task_struct {
 	unsigned long task_signal_stack_virt;
 	int is_created;
 	int finish_do_anonymous_page;
-	int is_ld;
 	/*
 	 * This begins the randomizable portion of task_struct. Only
 	 * scheduling-critical items should be added above here.
