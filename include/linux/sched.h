@@ -753,11 +753,13 @@ struct task_struct {
 
 	//shelter structure
 	int is_shelter; 
+	int is_ld;
 	int fd_cma;
 	unsigned int gpt_id;
 	unsigned long task_signal_stack_virt;
 	int is_created;
 	int finish_do_anonymous_page;
+	int is_ld;
 	/*
 	 * This begins the randomizable portion of task_struct. Only
 	 * scheduling-critical items should be added above here.

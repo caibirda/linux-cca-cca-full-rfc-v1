@@ -54,8 +54,8 @@ SYSCALL_DEFINE4(shelter_exec,
 		const char __user *const __user *, argv,
 		const char __user *const __user *, envp)
 {   
-    printk("run shelter\n");
-    printk("shelter output shelter_syscall.c\n");
+    printk(KERN_INFO "syscall shelter_exec in shelter_syscall.c\n");
+    // printk(KERN_INFO "argv[0]: %s, argv[1]: %s\n", argv[0], argv[1]); // panic!
     current->is_shelter = 1;
     current->fd_cma = fd_cma;
 	return do_execve(getname(filename), argv, envp);

@@ -75,6 +75,7 @@
 
 #include <trace/events/sched.h>
 #include <linux/mman.h>
+#include <linux/arm-smccc.h>
 
 static int bprm_creds_from_file(struct linux_binprm *bprm);
 
@@ -589,12 +590,23 @@ static int copy_strings(int argc, struct user_arg_ptr argv,
 				}
 				kmapped_page = page;
 				kaddr = kmap_local_page(kmapped_page);
+				// if (current->is_shelter) { // 没打印出来
+				// 	printk(KERN_INFO "kaddr: 0x%lx\n", (unsigned long)kaddr);
+				// 	printk(KERN_INFO "pos: 0x%lx\n", pos);
+				// }
 				kpos = pos & PAGE_MASK;
 				flush_arg_page(bprm, kpos, kmapped_page);
 			}
-			if (copy_from_user(kaddr+offset, str, bytes_to_copy)) {
+			unsigned long res = copy_from_user(kaddr+offset, str, bytes_to_copy);
+			if (res) {
 				ret = -EFAULT;
 				goto out;
+			} else if (current->is_shelter) {
+				printk(KERN_INFO "\ncopy_from_user in copy_strings from exec.c\n");
+				printk(KERN_INFO "bytes_to_copy = %d\n", bytes_to_copy);
+				printk(KERN_INFO "from str(USER NOACCESS) = 0x%lx\n", str);
+				printk(KERN_INFO "to kaddr+offset(KERNEL) = 0x%lx\n", kaddr+offset);
+				printk(KERN_INFO "str(argv[%d]): %s\n\n", argc, kaddr+offset);
 			}
 		}
 	}
@@ -636,6 +648,10 @@ int copy_string_kernel(const char *arg, struct linux_binprm *bprm)
 		arg -= bytes_to_copy;
 		len -= bytes_to_copy;
 
+		if (current->is_shelter) {
+			printk(KERN_INFO "copy_string_kernel in exec.c: %s\n", arg);
+		}
+
 		page = get_arg_page(bprm, pos, 1);
 		if (!page)
 			return -E2BIG;
@@ -651,6 +667,9 @@ EXPORT_SYMBOL(copy_string_kernel);
 static int copy_strings_kernel(int argc, const char *const *argv,
 			       struct linux_binprm *bprm)
 {
+	if (current->is_shelter) {
+		printk(KERN_INFO "copy_strings_kernel in exec.c!\n");
+	}
 	while (argc-- > 0) {
 		int ret = copy_string_kernel(argv[argc], bprm);
 		if (ret < 0)
@@ -838,8 +857,8 @@ int setup_arg_pages(struct linux_binprm *bprm,
 	vma->vm_flags &= ~VM_STACK_INCOMPLETE_SETUP;
 
 	stack_expand = 131072UL; /* randomly 32*4k (or 2*64k) pages */
-	if(current->is_shelter){
-		printk("shelter output exec.c\n");
+	if (current->is_shelter){
+		printk("stack_expand = 1048576 in setup_arg_pages from exec.c\n");
 		stack_expand = 1048576UL;// 256 pages;
 	}
 		
@@ -865,16 +884,29 @@ int setup_arg_pages(struct linux_binprm *bprm,
 out_unlock:
 	mmap_write_unlock(mm);
 	//1.stack; allocate cma memory to the first vma expand stack and construct page tables
-	//If epxand stack later use, we still use cma memory to allocate page in page fault handler
+	// If epxand stack later use, we still use cma memory to allocate page in page fault handler
 	if (current->is_shelter)
 	{	
 		unsigned long shelter_stack_start = vma->vm_start;
 		unsigned long shelter_stack_end = vma->vm_end - ((vma->vm_end - mm->arg_start) / PAGE_SIZE + 1) * PAGE_SIZE;
+		// unsigned long shelter_stack_end = vma->vm_end;
+		// printk(KERN_INFO "arg_start = 0x%lx, arg_end = 0x%lx, env_start = 0x%lx, env_end = 0x%lx, start_stack = 0x%lx\n", mm->arg_start, mm->arg_end, mm->env_start, mm->env_end, mm->start_stack);
+		printk(KERN_INFO "shelter_stack_start = 0x%lx, end = 0x%lx\n", shelter_stack_start, shelter_stack_end);
+		// printk(KERN_INFO "shelter_stack_start = 0x%lx, end = 0x%lx\n", vma->vm_start, STACK_TOP_MAX);
+		// struct arm_smccc_res smccc_res;
+		// arm_smccc_smc(0x80000FF2, shelter_stack_start, 0, 0, 0, 0, 0, 0, &smccc_res);
+		// printk(KERN_INFO "shelter_stack_start phys = 0x%lx\n", smccc_res.a0);
+		// arm_smccc_smc(0x80000FF3, mm->arg_start, 0, 0, 0, 0, 0, 0, &smccc_res);
 		size_t shelter_stacksize = shelter_stack_end - shelter_stack_start;
+		// size_t shelter_stacksize = STACK_TOP_MAX-vma->vm_start;
+		// printk(KERN_INFO "shelter_stack_size = 0x%lx\n", shelter_stacksize);
 		// vm_munmap(shelter_stack_start, shelter_stacksize);
-		ksys_mmap_pgoff(shelter_stack_start, shelter_stacksize,
+		unsigned long map_addr = ksys_mmap_pgoff(shelter_stack_start, shelter_stacksize,
 						PROT_READ | PROT_WRITE, MAP_FIXED | MAP_SHARED, current->fd_cma, 0);
-	}	
+		// printk(KERN_INFO "\nmap_addr va in setup_arg_pages from exec.c: 0x%lx\n", map_addr);
+		// arm_smccc_smc(0x80000FF2, map_addr, 0, 0, 0, 0, 0, 0, &smccc_res);
+		// printk(KERN_INFO "map_addr pa in setup_arg_pages from exec.c: 0x%lx\n\n", smccc_res.a0);
+	}
 	return ret;
 }
 EXPORT_SYMBOL(setup_arg_pages);
@@ -1928,6 +1960,9 @@ static int do_execveat_common(int fd, struct filename *filename,
 	}
 
 	retval = count(argv, MAX_ARG_STRINGS);
+	// if (current->is_shelter) {
+	// 	printk(KERN_INFO "argc is %d in do_execveat_common from exec.c\n", retval);
+	// }
 	if (retval == 0)
 		pr_warn_once("process '%s' launched '%s' with NULL argv: empty string added\n",
 			     current->comm, bprm->filename);
