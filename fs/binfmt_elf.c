@@ -446,9 +446,6 @@ static unsigned long elf_map(struct file *filep, unsigned long addr,
 			{
 				do_mprotect_pkey(map_addr, total_size, PROT_READ, -1);
 			}
-			if (current->is_shelter) {
-				current->is_ld = 1;
-			}
 		} else {
 			map_addr = vm_mmap(filep, addr, total_size, prot, type, off);
 		}
@@ -697,7 +694,6 @@ static unsigned long load_elf_interp(struct elfhdr *interp_elf_ex,
 		goto out;
 	}
 
-	current->is_ld = 1;
 	eppnt = interp_elf_phdata;
 	for (i = 0; i < interp_elf_ex->e_phnum; i++, eppnt++) {
 		if (eppnt->p_type == PT_LOAD) {

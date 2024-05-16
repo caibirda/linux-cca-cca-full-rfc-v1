@@ -31,7 +31,7 @@ SYSCALL_DEFINE6(mmap, unsigned long, addr, unsigned long, len,
 	if (current->is_shelter) {
 		printk(KERN_INFO "\nsyscall mmap in kernel/sys.c\n");
 	}
-	if (current->is_ld == 1 && current->is_shelter == 1 && !(flags & MAP_ANONYMOUS)){ // Not MAP_ANONYMOUS
+	if (current->is_shelter == 1 && !(flags & MAP_ANONYMOUS)){ // Not MAP_ANONYMOUS
 		struct file *filep = fget(fd);
 		if (!filep) {
 			printk(KERN_ERR "get filep failed!\n");
