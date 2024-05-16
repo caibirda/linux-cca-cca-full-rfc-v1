@@ -457,7 +457,9 @@ ssize_t vfs_read(struct file *file, char __user *buf, size_t count, loff_t *pos)
 		return -EINVAL;
 	if (unlikely(!access_ok(buf, count)))
 		return -EFAULT;
-
+	if (current->is_shelter == 1) {
+		printk(KERN_INFO "vfs_read, file name: %s, len = 0x%lx, off = 0x%lx\n", file->f_path.dentry->d_iname, count, *pos);
+	}
 	ret = rw_verify_area(READ, file, pos, count);
 	if (ret)
 		return ret;

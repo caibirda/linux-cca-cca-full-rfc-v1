@@ -1666,11 +1666,11 @@ SYSCALL_DEFINE4(prlimit64, pid_t, pid, unsigned int, resource,
 		const struct rlimit64 __user *, new_rlim,
 		struct rlimit64 __user *, old_rlim)
 {
-	if (current->is_shelter) {
-		printk(KERN_INFO "syscall prlimit64!\n");
-		printk(KERN_INFO "pid: %d, resource: %d\n", pid, resource);
-		printk(KERN_INFO "new_rlim: 0x%lx, old_rlim: 0x%lx\n", (unsigned long)new_rlim, (unsigned long)old_rlim);
-	}
+	// if (current->is_shelter) {
+	// 	printk(KERN_INFO "syscall prlimit64!\n");
+	// 	printk(KERN_INFO "pid: %d, resource: %d\n", pid, resource);
+	// 	printk(KERN_INFO "new_rlim: 0x%lx, old_rlim: 0x%lx\n", (unsigned long)new_rlim, (unsigned long)old_rlim);
+	// }
 	struct rlimit64 old64, new64;
 	struct rlimit old, new;
 	struct task_struct *tsk;
@@ -1707,9 +1707,9 @@ SYSCALL_DEFINE4(prlimit64, pid_t, pid, unsigned int, resource,
 	// 	printk(KERN_INFO "check3\n");
 	// }
 	get_task_struct(tsk);
-	if (current->is_shelter) {
-		printk(KERN_INFO "check4\n");
-	}
+	// if (current->is_shelter) {
+	// 	printk(KERN_INFO "check4\n");
+	// }
 	rcu_read_unlock();
 
 	ret = do_prlimit(tsk, resource, new_rlim ? &new : NULL,
