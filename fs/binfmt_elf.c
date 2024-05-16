@@ -450,7 +450,7 @@ static unsigned long elf_map(struct file *filep, unsigned long addr,
 		}
 		if (!BAD_ADDR(map_addr)) {
 			vm_munmap(map_addr+size, total_size-size);
-			if (current->is_shelter && current->is_ld) {
+			if (current->is_shelter && total_size) {
 				printk(KERN_INFO "unmap interpreter in elf_map, addr = 0x%lx, size = 0x%lx\n", map_addr+size, total_size-size);
 			}
 		}
