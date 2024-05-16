@@ -452,40 +452,40 @@ ssize_t vfs_read(struct file *file, char __user *buf, size_t count, loff_t *pos)
 	ssize_t ret;
 
 	if (!(file->f_mode & FMODE_READ)) {
-		if (current->is_ld == 1 && current->is_shelter == 1) {
-			printk(KERN_ERR "FMODE_READ = 0!\n");
-		}
+		// if (current->is_ld == 1 && current->is_shelter == 1) {
+		// 	printk(KERN_ERR "FMODE_READ = 0!\n");
+		// }
 		return -EBADF;
 	}
 	// if (current->is_ld == 1 && current->is_shelter == 1) {
 	// 	printk(KERN_INFO "check1\n");
 	// }
 	if (!(file->f_mode & FMODE_CAN_READ)) {
-		if (current->is_ld == 1 && current->is_shelter == 1) {
-			printk(KERN_ERR "FMODE_CAN_READ = 0!\n");
-		}
+		// if (current->is_ld == 1 && current->is_shelter == 1) {
+		// 	printk(KERN_ERR "FMODE_CAN_READ = 0!\n");
+		// }
 		return -EINVAL;
 	}
 	// if (current->is_ld == 1 && current->is_shelter == 1) {
 	// 	printk(KERN_INFO "check2\n");
 	// }
 	if (unlikely(!access_ok(buf, count))) {
-		if (current->is_ld == 1 && current->is_shelter == 1) {
-			printk(KERN_ERR "__user buf invalid!\n");
-		}
+		// if (current->is_ld == 1 && current->is_shelter == 1) {
+		// 	printk(KERN_ERR "__user buf invalid!\n");
+		// }
 		return -EFAULT;
 	}
 	// if (current->is_ld == 1 && current->is_shelter == 1) {
 	// 	printk(KERN_INFO "check3\n");
 	// }
-	if (current->is_ld == 1 && current->is_shelter == 1) {
-		printk(KERN_INFO "vfs_read, file name: %s, len = 0x%lx, off = 0x%lx\n", file->f_path.dentry->d_iname, count, *pos);
-	}
+	// if (current->is_ld == 1 && current->is_shelter == 1) {
+	// 	printk(KERN_INFO "vfs_read, file name: %s, len = 0x%lx, off = 0x%lx\n", file->f_path.dentry->d_iname, count, *pos);
+	// }
 	ret = rw_verify_area(READ, file, pos, count);
 	if (ret) {
-		if (current->is_ld == 1 && current->is_shelter == 1) {
-			printk(KERN_ERR "rw_verify_area failed!\n");
-		}
+		// if (current->is_ld == 1 && current->is_shelter == 1) {
+		// 	printk(KERN_ERR "rw_verify_area failed!\n");
+		// }
 		return ret;
 	}
 	// if (current->is_ld == 1 && current->is_shelter == 1) {
