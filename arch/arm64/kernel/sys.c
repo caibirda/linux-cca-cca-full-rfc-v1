@@ -38,13 +38,13 @@ SYSCALL_DEFINE6(mmap, unsigned long, addr, unsigned long, len,
 			return -EBADF;
 		}
 		printk(KERN_INFO "mmap file name: %s, len = 0x%lx, off = 0x%lx\n", filep->f_path.dentry->d_iname, len, off);
-		printk(KERN_INFO "ld syscall mmap, addr: 0x%lx\n", addr);
+		printk(KERN_INFO "syscall mmap, addr: 0x%lx\n", addr);
 		if (addr != 0) {
 			res = ksys_mmap_pgoff(addr, len, prot, MAP_FIXED | MAP_SHARED, current->fd_cma, 0);
 		} else {
 			res = ksys_mmap_pgoff(addr, len, prot, MAP_SHARED, current->fd_cma, 0);
 		}
-		printk(KERN_INFO "ld syscall mmap result: 0x%lx\n", res);
+		printk(KERN_INFO "syscall mmap result: 0x%lx\n", res);
 		loff_t file_pos = off;
 		vfs_read(filep, (char*)res, len, &file_pos);
 		if ((prot & PROT_EXEC) != 0) { // PROT_EXEC

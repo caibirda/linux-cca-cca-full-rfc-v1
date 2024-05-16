@@ -120,6 +120,9 @@ static __always_inline void enter_from_user_mode(struct pt_regs *regs)
  */
 static __always_inline void __exit_to_user_mode(void)
 {
+	// if(current->is_shelter) {
+	// 	printk(KERN_INFO "__exit_to_user_mode\n");
+	// }
 	trace_hardirqs_on_prepare();
 	lockdep_hardirqs_on_prepare();
 	user_enter_irqoff();
@@ -129,19 +132,44 @@ static __always_inline void __exit_to_user_mode(void)
 static __always_inline void prepare_exit_to_user_mode(struct pt_regs *regs)
 {
 	unsigned long flags;
-
 	local_daif_mask();
-
+	// int syscallno = regs->syscallno;
+	// if (current->is_shelter && syscallno == 0x4f) {
+	// 	printk(KERN_INFO "after local_daif_mask\n");
+	// }
 	flags = read_thread_flags();
-	if (unlikely(flags & _TIF_WORK_MASK))
+	// if (current->is_shelter && syscallno == 0x4f) {
+	// 	printk(KERN_INFO "after read_thread_flags, flags=0x%lx\n", flags);
+	// }
+	if (unlikely(flags & _TIF_WORK_MASK)) {
+		// if (current->is_shelter && syscallno == 0x4f) {
+		// 	printk(KERN_INFO "now do_notify_resume: flags=0x%lx, sp=0x%lx, pc=0x%lx, syscallno=0x%lx, x0=0x%lx, x1=0x%lx, x2=0x%lx\n", flags, regs->sp, regs->pc, regs->syscallno, regs->regs[0], regs->regs[1], regs->regs[2]);
+		// }
 		do_notify_resume(regs, flags);
+	}
+	// if (current->is_shelter && syscallno == 0x4f) {
+	// 	printk(KERN_INFO "after do_notify_resume\n");
+	// }
 }
 
 static __always_inline void exit_to_user_mode(struct pt_regs *regs)
 {
+	// int syscallno = regs->syscallno;
+	// if (current->is_shelter && syscallno == 0x4f) {
+	// 	printk(KERN_INFO "now exit_to_user_mode in entry-common.c, sp=0x%lx, pc=0x%lx, syscallno=0x%lx, x0=0x%lx, x1=0x%lx, x2=0x%lx\n", regs->sp, regs->pc, regs->syscallno, regs->regs[0], regs->regs[1], regs->regs[2]);
+	// }
 	prepare_exit_to_user_mode(regs);
+	// if (current->is_shelter && syscallno == 0x4f) {
+	// 	printk(KERN_INFO "after prepare_exit_to_user_mode, sp=0x%lx, pc=0x%lx, syscallno=0x%lx, x0=0x%lx, x1=0x%lx, x2=0x%lx\n", regs->sp, regs->pc, regs->syscallno, regs->regs[0], regs->regs[1], regs->regs[2]);
+	// }
 	mte_check_tfsr_exit();
+	// if (current->is_shelter && syscallno == 0x4f) {
+	// 	printk(KERN_INFO "after mte_check_tfsr_exit, sp=0x%lx, pc=0x%lx, syscallno=0x%lx, x0=0x%lx, x1=0x%lx, x2=0x%lx\n", regs->sp, regs->pc, regs->syscallno, regs->regs[0], regs->regs[1], regs->regs[2]);
+	// }
 	__exit_to_user_mode();
+	// if (current->is_shelter && syscallno == 0x4f) {
+	// 	printk(KERN_INFO "after __exit_to_user_mode, sp=0x%lx, pc=0x%lx, syscallno=0x%lx, x0=0x%lx, x1=0x%lx, x2=0x%lx\n", regs->sp, regs->pc, regs->syscallno, regs->regs[0], regs->regs[1], regs->regs[2]);
+	// }
 }
 
 asmlinkage void noinstr asm_exit_to_user_mode(struct pt_regs *regs)
@@ -632,10 +660,22 @@ static void noinstr el0_dbg(struct pt_regs *regs, unsigned long esr)
 
 static void noinstr el0_svc(struct pt_regs *regs)
 {
+	// if (current->is_shelter) {
+	// 	printk(KERN_INFO "\nel0_svc in entry-common.c, sp=0x%lx, pc=0x%lx, syscallno=0x%lx, x0=0x%lx, x1=0x%lx, x2=0x%lx\n", regs->sp, regs->pc, regs->syscallno, regs->regs[0], regs->regs[1], regs->regs[2]);
+	// }
 	enter_from_user_mode(regs);
+	// if (current->is_shelter) {
+	// 	printk(KERN_INFO "after enter_from_user_mode, sp=0x%lx, pc=0x%lx, syscallno=0x%lx, x0=0x%lx, x1=0x%lx, x2=0x%lx\n", regs->sp, regs->pc, regs->syscallno, regs->regs[0], regs->regs[1], regs->regs[2]);
+	// }
 	cortex_a76_erratum_1463225_svc_handler();
 	do_el0_svc(regs);
+	// if (current->is_shelter) {
+	// 	printk(KERN_INFO "do_el0_svc done, now exit_to_user_mode, sp=0x%lx, pc=0x%lx, syscallno=0x%lx, x0=0x%lx, x1=0x%lx, x2=0x%lx\n", regs->sp, regs->pc, regs->syscallno, regs->regs[0], regs->regs[1], regs->regs[2]);
+	// }
 	exit_to_user_mode(regs);
+	// if (current->is_shelter) {
+	// 	printk(KERN_INFO "after exit_to_user_mode, sp=0x%lx, pc=0x%lx, syscallno=0x%lx, x0=0x%lx, x1=0x%lx, x2=0x%lx\n", regs->sp, regs->pc, regs->syscallno, regs->regs[0], regs->regs[1], regs->regs[2]);
+	// }
 }
 
 static void noinstr el0_fpac(struct pt_regs *regs, unsigned long esr)

@@ -1,5 +1,3 @@
-#include <linux/mman.h>
-#include <linux/syscalls.h>
 /* SPDX-License-Identifier: GPL-2.0 */
 #ifndef _LINUX_HIGHMEM_INTERNAL_H
 #define _LINUX_HIGHMEM_INTERNAL_H
@@ -181,12 +179,7 @@ static inline void kunmap(struct page *page)
 
 static inline void *kmap_local_page(struct page *page)
 {
-	void *res = page_address(page);
-	// if (current->is_shelter) { // 没打印出来
-	// 	printk(KERN_INFO "kmap_local_page in highmem-internal.h, res = 0x%lx\n", (unsigned long)res);
-	// 	ksys_mmap_pgoff((unsigned long)res, PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_FIXED | MAP_SHARED, current->fd_cma, 0);
-	// }
-	return res;
+	return page_address(page);
 }
 
 static inline void *kmap_local_folio(struct folio *folio, size_t offset)

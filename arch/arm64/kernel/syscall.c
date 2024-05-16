@@ -201,7 +201,7 @@ void do_el0_svc(struct pt_regs *regs)
 	u64 sysno = regs->regs[8];
 	int gpt_id;
 	if (current->is_shelter) {
-		printk(KERN_INFO "\ndo_el0_svc in syscall.c, sysno = 0x%lx\n", sysno);
+		printk(KERN_INFO "do_el0_svc in syscall.c, sysno = 0x%lx\n", sysno);
 		printk(KERN_INFO "sp:0x%lx, pc: 0x%lx\n", regs->sp, regs->pc);
 	}
 	el0_svc_common(regs, regs->regs[8], __NR_syscalls, sys_call_table);

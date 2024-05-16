@@ -606,7 +606,7 @@ static int copy_strings(int argc, struct user_arg_ptr argv,
 				printk(KERN_INFO "bytes_to_copy = %d\n", bytes_to_copy);
 				printk(KERN_INFO "from str(USER NOACCESS) = 0x%lx\n", str);
 				printk(KERN_INFO "to kaddr+offset(KERNEL) = 0x%lx\n", kaddr+offset);
-				printk(KERN_INFO "str(argv[%d]): %s\n\n", argc, kaddr+offset);
+				printk(KERN_INFO "str(argv/env[%d]): %s\n\n", argc, kaddr+offset);
 			}
 		}
 	}
@@ -890,7 +890,7 @@ out_unlock:
 		unsigned long shelter_stack_start = vma->vm_start;
 		unsigned long shelter_stack_end = vma->vm_end - ((vma->vm_end - mm->arg_start) / PAGE_SIZE + 1) * PAGE_SIZE;
 		// unsigned long shelter_stack_end = vma->vm_end;
-		// printk(KERN_INFO "arg_start = 0x%lx, arg_end = 0x%lx, env_start = 0x%lx, env_end = 0x%lx, start_stack = 0x%lx\n", mm->arg_start, mm->arg_end, mm->env_start, mm->env_end, mm->start_stack);
+		printk(KERN_INFO "arg_start = 0x%lx, arg_end = 0x%lx, env_start = 0x%lx, env_end = 0x%lx, start_stack = 0x%lx\n", mm->arg_start, mm->arg_end, mm->env_start, mm->env_end, mm->start_stack);
 		printk(KERN_INFO "shelter_stack_start = 0x%lx, end = 0x%lx\n", shelter_stack_start, shelter_stack_end);
 		// printk(KERN_INFO "shelter_stack_start = 0x%lx, end = 0x%lx\n", vma->vm_start, STACK_TOP_MAX);
 		// struct arm_smccc_res smccc_res;
@@ -1960,20 +1960,23 @@ static int do_execveat_common(int fd, struct filename *filename,
 	}
 
 	retval = count(argv, MAX_ARG_STRINGS);
-	// if (current->is_shelter) {
-	// 	printk(KERN_INFO "argc is %d in do_execveat_common from exec.c\n", retval);
-	// }
 	if (retval == 0)
 		pr_warn_once("process '%s' launched '%s' with NULL argv: empty string added\n",
 			     current->comm, bprm->filename);
 	if (retval < 0)
 		goto out_free;
 	bprm->argc = retval;
+	if (current->is_shelter) {
+		printk(KERN_INFO "argc is %d in do_execveat_common from exec.c\n", retval);
+	}
 
 	retval = count(envp, MAX_ARG_STRINGS);
 	if (retval < 0)
 		goto out_free;
 	bprm->envc = retval;
+	if (current->is_shelter) {
+		printk(KERN_INFO "envp: 0x%lx, envc is %d in do_execveat_common from exec.c\n", (unsigned long)envp.ptr.native, retval);
+	}
 
 	retval = bprm_stack_limits(bprm);
 	if (retval < 0)

@@ -1041,6 +1041,7 @@ static void handle_signal(struct ksignal *ksig, struct pt_regs *regs)
  */
 static void do_signal(struct pt_regs *regs)
 {
+	// int syscallno = regs->syscallno;
 	unsigned long continue_addr = 0, restart_addr = 0;
 	int retval = 0;
 	struct ksignal ksig;
@@ -1053,11 +1054,18 @@ static void do_signal(struct pt_regs *regs)
 		continue_addr = regs->pc;
 		restart_addr = continue_addr - (compat_thumb_mode(regs) ? 2 : 4);
 		retval = regs->regs[0];
+		// if (current->is_shelter && syscallno == 0x4f) {
+		// 	printk(KERN_INFO "do_signal for syscall: restart_addr:0x%lx, retval:0x%lx\n", restart_addr, retval);
+		// 	printk(KERN_INFO "before forget_syscall sp=0x%lx, pc=0x%lx, syscallno=0x%lx, x0=0x%lx, x1=0x%lx, x2=0x%lx\n", regs->sp, regs->pc, regs->syscallno, regs->regs[0], regs->regs[1], regs->regs[2]);
+		// }
 
 		/*
 		 * Avoid additional syscall restarting via ret_to_user.
 		 */
 		forget_syscall(regs);
+		// if (current->is_shelter && syscallno == 0x4f) {
+		// 	printk(KERN_INFO "after forget_syscall, sp=0x%lx, pc=0x%lx, syscallno=0x%lx, x0=0x%lx, x1=0x%lx, x2=0x%lx\n", regs->sp, regs->pc, regs->syscallno, regs->regs[0], regs->regs[1], regs->regs[2]);
+		// }
 
 		/*
 		 * Prepare for system call restart. We do this here so that a
@@ -1079,6 +1087,9 @@ static void do_signal(struct pt_regs *regs)
 	 * the debugger may change all of our registers.
 	 */
 	if (get_signal(&ksig)) {
+		// if (current->is_shelter && syscallno == 0x4f) {
+		// 	printk(KERN_INFO "do_signal for get_signal & handle_signal\n");
+		// }
 		/*
 		 * Depending on the signal settings, we may need to revert the
 		 * decision to restart the system call, but skip this if a
@@ -1102,18 +1113,28 @@ static void do_signal(struct pt_regs *regs)
 	 * has chosen to restart at a different PC, ignore the restart.
 	 */
 	if (syscall && regs->pc == restart_addr) {
+		// if (current->is_shelter && syscallno == 0x4f) {
+		// 	printk(KERN_INFO "do_signal for restarting a different system call\n");
+		// }
 		if (retval == -ERESTART_RESTARTBLOCK)
 			setup_restart_syscall(regs);
 		user_rewind_single_step(current);
 	}
 
+	// if (current->is_shelter && syscallno == 0x4f) {
+	// 	printk(KERN_INFO "now restore_saved_sigmask in do_signal\n");
+	// }
 	restore_saved_sigmask();
 }
 
 void do_notify_resume(struct pt_regs *regs, unsigned long thread_flags)
 {
+	// int syscallno = regs->syscallno;
 	do {
 		if (thread_flags & _TIF_NEED_RESCHED) {
+			// if (current->is_shelter && syscallno == 0x4f) {
+			// 	printk(KERN_INFO "check1\n");
+			// }
 			/* Unmask Debug and SError for the next task */
 			local_daif_restore(DAIF_PROCCTX_NOIRQ);
 
@@ -1121,27 +1142,48 @@ void do_notify_resume(struct pt_regs *regs, unsigned long thread_flags)
 		} else {
 			local_daif_restore(DAIF_PROCCTX);
 
-			if (thread_flags & _TIF_UPROBE)
+			if (thread_flags & _TIF_UPROBE) {
+				// if (current->is_shelter && syscallno == 0x4f) {
+				// 	printk(KERN_INFO "check2\n");
+				// }
 				uprobe_notify_resume(regs);
-
+			}
 			if (thread_flags & _TIF_MTE_ASYNC_FAULT) {
+				// if (current->is_shelter && syscallno == 0x4f) {
+				// 	printk(KERN_INFO "check3\n");
+				// }
 				clear_thread_flag(TIF_MTE_ASYNC_FAULT);
 				send_sig_fault(SIGSEGV, SEGV_MTEAERR,
 					       (void __user *)NULL, current);
 			}
 
-			if (thread_flags & (_TIF_SIGPENDING | _TIF_NOTIFY_SIGNAL))
+			if (thread_flags & (_TIF_SIGPENDING | _TIF_NOTIFY_SIGNAL)) {
+				// if (current->is_shelter && syscallno == 0x4f) {
+				// 	printk(KERN_INFO "check4\n");
+				// }
 				do_signal(regs);
+			}
 
-			if (thread_flags & _TIF_NOTIFY_RESUME)
+			if (thread_flags & _TIF_NOTIFY_RESUME) {
+				// if (current->is_shelter && syscallno == 0x4f) {
+				// 	printk(KERN_INFO "check5\n");
+				// }
 				resume_user_mode_work(regs);
+			}
 
-			if (thread_flags & _TIF_FOREIGN_FPSTATE)
+			if (thread_flags & _TIF_FOREIGN_FPSTATE) {
+				// if (current->is_shelter && syscallno == 0x4f) {
+				// 	printk(KERN_INFO "check6\n");
+				// }
 				fpsimd_restore_current_state();
+			}
 		}
 
 		local_daif_mask();
 		thread_flags = read_thread_flags();
+		// if (current->is_shelter && syscallno == 0x4f) {
+		// 	printk(KERN_INFO "thread_flags:0x%lx\n", thread_flags);
+		// }
 	} while (thread_flags & _TIF_WORK_MASK);
 }
 

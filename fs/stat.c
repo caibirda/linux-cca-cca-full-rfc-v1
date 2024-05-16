@@ -231,7 +231,7 @@ static int vfs_statx(int dfd, struct filename *filename, int flags,
 
 retry:
 	error = filename_lookup(dfd, filename, lookup_flags, &path, NULL);
-	if (error)
+	if (error) 
 		goto out;
 
 	error = vfs_getattr(&path, stat, request_mask, flags);
@@ -444,7 +444,7 @@ SYSCALL_DEFINE4(newfstatat, int, dfd, const char __user *, filename,
 	if (current->is_shelter) {
 		printk(KERN_INFO "\nsyscall newfstatat in stat.c\n");
 		printk(KERN_INFO "dfd:%d, flag:%d\n", dfd, flag);
-		printk(KERN_INFO "filename addr:0x%lx, statbuf addr:0x%lx\n", (unsigned long)filename, (unsigned long)statbuf);
+		printk(KERN_INFO "filename addr:0x%lx, statbuf addr:0x%lx, struct stat size:0x%lx", (unsigned long)filename, (unsigned long)statbuf, sizeof(struct stat));
 		int len = strnlen_user(filename, MAX_ARG_STRLEN);
 		printk(KERN_INFO "filename len:%d\n", len);
 		char *buf = kmalloc(len + 1, GFP_KERNEL);

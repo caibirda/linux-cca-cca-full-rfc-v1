@@ -398,7 +398,6 @@ static unsigned long elf_map(struct file *filep, unsigned long addr,
 		unsigned long total_size)
 {
 	if (current->is_shelter) {
-		printk(KERN_INFO "call elfmap in binfmt_elf.c\n");
 		printk(KERN_INFO "call elf_map in binfmt_elf.c\n");
 	}
 	unsigned long map_addr;
@@ -425,7 +424,7 @@ static unsigned long elf_map(struct file *filep, unsigned long addr,
 			printk(KERN_INFO "interpreter total_size: %lu = 0x%lx, elf_map in binfmt_elf.c\n", total_size, total_size);
 		}
 		total_size = ELF_PAGEALIGN(total_size);
-		if (current->is_shelter) {
+		if (current->is_shelter && total_size) {
 			printk(KERN_INFO "after align total_size: %lu = 0x%lx, elf_map in binfmt_elf.c\n", total_size, total_size);
 			loff_t ld_pos = off;
 			printk(KERN_INFO "mmap interpreter in elf_map from binfmt_elf.c! addr = 0x%lx\n", addr);
@@ -449,14 +448,17 @@ static unsigned long elf_map(struct file *filep, unsigned long addr,
 		} else {
 			map_addr = vm_mmap(filep, addr, total_size, prot, type, off);
 		}
-		if (!BAD_ADDR(map_addr))
+		if (!BAD_ADDR(map_addr)) {
 			vm_munmap(map_addr+size, total_size-size);
-	} else
-	{
+			if (current->is_shelter && current->is_ld) {
+				printk(KERN_INFO "unmap interpreter in elf_map, addr = 0x%lx, size = 0x%lx\n", map_addr+size, total_size-size);
+			}
+		}
+	} else {
 		if(current->is_shelter)
 		{
 			//2. .text, .data allocate cma memory to load elf section and construct page tables in this location
-			printk(KERN_INFO "shelter output binfmt_elf.c 1\n");
+			printk(KERN_INFO "load .text&.data to cma memory, addr=0x%lx, len=0x%lx, off=0x%lx\n", addr, size, off);
 			loff_t elf_pos = off;
 			map_addr = ksys_mmap_pgoff(addr, size, prot, MAP_FIXED | MAP_SHARED, current->fd_cma, 0);
 			vfs_read(filep, (void*)map_addr, size, &elf_pos); //copy elf section to cma memory
