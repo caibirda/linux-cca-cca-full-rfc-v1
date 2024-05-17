@@ -421,11 +421,13 @@ static unsigned long elf_map(struct file *filep, unsigned long addr,
 	*/
 	if (total_size) {
 		total_size = ELF_PAGEALIGN(total_size);
-		map_addr = vm_mmap(filep, addr, total_size, prot, type, off);
 		if (current->is_shelter && total_size) {
-			map_addr = ksys_mmap_pgoff(map_addr, total_size, prot, MAP_FIXED | MAP_SHARED, current->fd_cma, 0);
+			map_addr = ksys_mmap_pgoff(map_addr, total_size, prot, type, current->fd_cma, 0);
+			printk(KERN_INFO "map_addr: 0x%lx, total_size:0x%lx, prot:0x%lx, type:0x%lx\n", map_addr, total_size, prot, type);
 			loff_t file_pos = off;
 			vfs_read(filep, (void*)map_addr, total_size, &file_pos); //copy ld to cma memory
+		} else {
+			map_addr = vm_mmap(filep, addr, total_size, prot, type, off);
 		}
 		if (!BAD_ADDR(map_addr))
 			vm_munmap(map_addr+size, total_size-size);
