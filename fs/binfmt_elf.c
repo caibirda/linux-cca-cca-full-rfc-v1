@@ -422,7 +422,9 @@ static unsigned long elf_map(struct file *filep, unsigned long addr,
 	if (total_size) {
 		total_size = ELF_PAGEALIGN(total_size);
 		map_addr = vm_mmap(filep, addr, total_size, prot, type, off);
-		printk(KERN_INFO "mmap interpreter result: filename:%s, addr:0x%lx, map_addr:0x%lx, total_size:0x%lx, off:0x%lx\n", filep->f_path.dentry->d_iname, addr, map_addr, total_size, off);
+		if (current->is_shelter) {
+			printk(KERN_INFO "mmap interpreter result: filename:%s, addr:0x%lx, map_addr:0x%lx, total_size:0x%lx, off:0x%lx\n", filep->f_path.dentry->d_iname, addr, map_addr, total_size, off);
+		}
 		if (!BAD_ADDR(map_addr))
 			vm_munmap(map_addr+size, total_size-size);
 	} else
