@@ -132,7 +132,9 @@ static __always_inline void __exit_to_user_mode(void)
 static __always_inline void prepare_exit_to_user_mode(struct pt_regs *regs)
 {
 	unsigned long flags;
+
 	local_daif_mask();
+	
 	// int syscallno = regs->syscallno;
 	// if (current->is_shelter && syscallno == 0x4f) {
 	// 	printk(KERN_INFO "after local_daif_mask\n");

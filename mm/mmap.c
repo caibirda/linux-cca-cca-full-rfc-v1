@@ -279,16 +279,16 @@ success:
 	userfaultfd_unmap_complete(mm, &uf);
 	if (populate)
 		mm_populate(oldbrk, newbrk - oldbrk);
-	if (current->is_shelter) {
-		printk(KERN_INFO "ret from syscall brk in mmap.c, brk: 0x%lx\n\n", mm->brk);
-	}
+	// if (current->is_shelter) {
+	// 	printk(KERN_INFO "ret from syscall brk in mmap.c, brk: 0x%lx\n\n", mm->brk);
+	// }
 	return brk;
 
 out:
 	mmap_write_unlock(mm);
-	if(current->is_shelter) {
-		printk(KERN_INFO "ret from syscall brk in mmap.c, brk: 0x%lx\n\n", mm->brk);
-	}
+	// if(current->is_shelter) {
+	// 	printk(KERN_INFO "ret from syscall brk in mmap.c, brk: 0x%lx\n\n", mm->brk);
+	// }
 	return origbrk;
 }
 

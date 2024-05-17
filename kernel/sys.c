@@ -75,7 +75,7 @@
 #include <asm/unistd.h>
 
 #include "uid16.h"
-#include <linux/arm-smccc.h>
+// #include <linux/arm-smccc.h>
 
 #ifndef SET_UNALIGN_CTL
 # define SET_UNALIGN_CTL(a, b)	(-EINVAL)
