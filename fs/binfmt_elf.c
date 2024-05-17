@@ -50,7 +50,7 @@
 #include <asm/page.h>
 #include <linux/syscalls.h>
 #include <linux/types.h>
-#include <linux/arm-smccc.h>
+// #include <linux/arm-smccc.h>
 
 extern int do_mprotect_pkey(unsigned long start, size_t len, unsigned long prot, int pkey);
 
