@@ -1432,9 +1432,6 @@ unsigned long ksys_mmap_pgoff(unsigned long addr, unsigned long len,
 			      unsigned long prot, unsigned long flags,
 			      unsigned long fd, unsigned long pgoff)
 {
-	if (current->is_shelter) {
-		printk(KERN_INFO "call ksys_mmap_pgoff in mmap.c, addr: 0x%lx\n", addr);
-	}
 	struct file *file = NULL;
 	unsigned long retval;
 

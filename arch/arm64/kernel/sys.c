@@ -31,33 +31,31 @@ SYSCALL_DEFINE6(mmap, unsigned long, addr, unsigned long, len,
 	if (current->is_shelter) {
 		printk(KERN_INFO "\nsyscall mmap in kernel/sys.c\n");
 	}
-	if (current->is_shelter == 1 && !(flags & MAP_ANONYMOUS)){ // Not MAP_ANONYMOUS
+	if (current->is_shelter && !(flags & MAP_ANONYMOUS)){ // Not MAP_ANONYMOUS
 		struct file *filep = fget(fd);
 		if (!filep) {
 			printk(KERN_ERR "get filep failed!\n");
 			return -EBADF;
 		}
-		printk(KERN_INFO "mmap file name: %s, len = 0x%lx, off = 0x%lx\n", filep->f_path.dentry->d_iname, len, off);
-		printk(KERN_INFO "syscall mmap, addr: 0x%lx\n", addr);
+		printk(KERN_INFO "mmap file name:%s, addr = 0x%lx, len = 0x%lx, off = 0x%lx\n", filep->f_path.dentry->d_iname, addr, len, off);
 		if (addr != 0) {
-			res = ksys_mmap_pgoff(addr, len, prot, MAP_FIXED | MAP_SHARED, current->fd_cma, 0);
+			res = ksys_mmap_pgoff(addr, len, prot, MAP_FIXED | MAP_SHARED, current->fd_cma, off >> PAGE_SHIFT);
 		} else {
-			res = ksys_mmap_pgoff(addr, len, prot, MAP_SHARED, current->fd_cma, 0);
+			res = ksys_mmap_pgoff(addr, len, prot, MAP_SHARED, current->fd_cma, off >> PAGE_SHIFT);
 		}
-		printk(KERN_INFO "syscall mmap result: 0x%lx\n", res);
+		printk(KERN_INFO "mmap file result: addr = 0x%lx, len = 0x%lx, end = 0x%lx\n", res, len, res + len);
 		loff_t file_pos = off;
 		vfs_read(filep, (char*)res, len, &file_pos);
 		if ((prot & PROT_EXEC) != 0) { // PROT_EXEC
 			do_mprotect_pkey(res, len, PROT_EXEC|PROT_READ, -1);
-		}
-		else if ((prot & PROT_WRITE) == 0 ) { //NOT PROT_WRITE
+		} else if ((prot & PROT_WRITE) == 0 ) { //NOT PROT_WRITE
 			do_mprotect_pkey(res, len, PROT_READ, -1);
 		}
 	} else {
 		res = ksys_mmap_pgoff(addr, len, prot, flags, fd, off >> PAGE_SHIFT);
 	}
 	if (current->is_shelter) {
-		printk(KERN_INFO "called ksys_mmap_pgoff, res = 0x%lx, len = 0x%lx, end = 0x%lx\n", res, len, res + len);
+		printk(KERN_INFO "syscall mmap result: addr = 0x%lx, len = 0x%lx, end = 0x%lx\n", res, len, res + len);
 	}
 	return res;
 }

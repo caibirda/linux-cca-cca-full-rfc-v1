@@ -1729,7 +1729,7 @@ SYSCALL_DEFINE4(prlimit64, pid_t, pid, unsigned int, resource,
 
 	put_task_struct(tsk);
 	// if (current->is_shelter) {
-	// 	printk(KERN_INFO "check7, ret = %d\n", ret);
+	// 	printk(KERN_INFO "ret = %d\n", ret);
 	// 	printk(KERN_INFO "old_rlim->rlim_cur: 0x%lx, old_rlim->rlim_max: 0x%lx\n", old64.rlim_cur, old64.rlim_max);
 	// 	printk(KERN_INFO "after prlimit64, print content in old_rlim(0x%lx) in EL3->\n", old_rlim);
 	// 	struct arm_smccc_res smccc_res;
