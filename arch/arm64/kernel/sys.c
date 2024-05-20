@@ -18,6 +18,7 @@
 #include <asm/cpufeature.h>
 #include <asm/syscall.h>
 #include <linux/mman.h>
+#include <linux/arm-smccc.h>
 
 extern int do_mprotect_pkey(unsigned long start, size_t len, unsigned long prot, int pkey);
 
@@ -28,24 +29,33 @@ SYSCALL_DEFINE6(mmap, unsigned long, addr, unsigned long, len,
 	if (offset_in_page(off) != 0)
 		return -EINVAL;
 	unsigned long res = 0;
-	if (current->is_shelter) {
+	struct file *filep = NULL;
+	if (current->is_shelter){
 		printk(KERN_INFO "\nsyscall mmap in kernel/sys.c\n");
-	}
-	if (current->is_shelter && !(flags & MAP_ANONYMOUS)){ // Not MAP_ANONYMOUS
-		struct file *filep = fget(fd);
-		if (!filep) {
-			printk(KERN_ERR "get filep failed!\n");
-			return -EBADF;
+		if (!(flags & MAP_ANONYMOUS)) { // Not MAP_ANONYMOUS
+			filep = fget(fd);
+			if (!filep) {
+				printk(KERN_ERR "get filep failed!\n");
+				return -EBADF;
+			}
+			printk(KERN_INFO "mmap filename:%s, addr = 0x%lx, len = 0x%lx, off = 0x%lx\n",filep->f_path.dentry->d_iname, addr, len, off);
+		} else { // MAP_ANONYMOUS
+			printk(KERN_INFO "MAP_ANONYMOUS: addr = 0x%lx, len = 0x%lx, off = 0x%lx\n", addr, len, off);
 		}
-		printk(KERN_INFO "mmap file name:%s, addr = 0x%lx, len = 0x%lx, off = 0x%lx\n", filep->f_path.dentry->d_iname, addr, len, off);
 		if (addr != 0) {
 			res = ksys_mmap_pgoff(addr, len, prot, MAP_FIXED | MAP_SHARED, current->fd_cma, off >> PAGE_SHIFT);
 		} else {
 			res = ksys_mmap_pgoff(addr, len, prot, MAP_SHARED, current->fd_cma, off >> PAGE_SHIFT);
 		}
-		printk(KERN_INFO "mmap file result: addr = 0x%lx, len = 0x%lx, end = 0x%lx\n", res, len, res + len);
-		loff_t file_pos = off;
-		vfs_read(filep, (char*)res, len, &file_pos);
+		struct arm_smccc_res smccc_res;
+		arm_smccc_smc(0x80000FF2, res, 0, 0, 0, 0, 0, 0, &smccc_res);
+		if (!(flags & MAP_ANONYMOUS)) { // Not MAP_ANONYMOUS
+			printk(KERN_INFO "mmap filename:%s, addr/paddr = 0x%lx/0x%lx, len = 0x%lx, end = 0x%lx\n", filep->f_path.dentry->d_iname, res, smccc_res.a0, len, res + len);
+			loff_t file_pos = off;
+			vfs_read(filep, (void*)res, len, &file_pos);
+		} else { // MAP_ANONYMOUS
+			printk(KERN_INFO "MAP_ANONYMOUS result: addr/paddr = 0x%lx/0x%lx, len = 0x%lx, end = 0x%lx\n", res, smccc_res.a0, len, res + len);
+		}
 		if ((prot & PROT_EXEC) != 0) { // PROT_EXEC
 			do_mprotect_pkey(res, len, PROT_EXEC|PROT_READ, -1);
 		} else if ((prot & PROT_WRITE) == 0 ) { //NOT PROT_WRITE

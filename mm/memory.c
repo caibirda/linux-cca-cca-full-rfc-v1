@@ -4021,6 +4021,9 @@ out_release:
  */
 static vm_fault_t do_anonymous_page(struct vm_fault *vmf)
 {
+	// if (current->is_shelter) {
+	// 	printk(KERN_INFO "do_anonymous_page!\n");
+	// }
 	struct vm_area_struct *vma = vmf->vma;
 	struct page *page;
 	vm_fault_t ret = 0;
@@ -4886,6 +4889,9 @@ split:
  */
 static vm_fault_t handle_pte_fault(struct vm_fault *vmf)
 {
+	// if (current->is_shelter) {
+	// 	printk(KERN_INFO "handle_pte_fault");
+	// }
 	pte_t entry;
 
 	if (unlikely(pmd_none(*vmf->pmd))) {
