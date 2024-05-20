@@ -4021,6 +4021,9 @@ out_release:
  */
 static vm_fault_t do_anonymous_page(struct vm_fault *vmf)
 {
+	// if (current->is_shelter) {
+	// 	printk(KERN_INFO "do_anonymous_page!\n");
+	// }
 	struct vm_area_struct *vma = vmf->vma;
 	struct page *page;
 	vm_fault_t ret = 0;
@@ -4663,7 +4666,6 @@ static vm_fault_t do_fault(struct vm_fault *vmf)
 		struct arm_smccc_res smccc_res;
 		arm_smccc_smc(0x80000F01, current->pid, vmf->address, PAGE_SIZE, 0, 0, 0, 0, &smccc_res);
 		// 在kernel中对于enclave page table的处理，shelter并没有忽视这一点
-		printk(KERN_INFO "SMC 0x80000F01(SET_PAGE) success\n");
 	}
 	return ret;
 }
@@ -4887,6 +4889,9 @@ split:
  */
 static vm_fault_t handle_pte_fault(struct vm_fault *vmf)
 {
+	// if (current->is_shelter) {
+	// 	printk(KERN_INFO "handle_pte_fault");
+	// }
 	pte_t entry;
 
 	if (unlikely(pmd_none(*vmf->pmd))) {

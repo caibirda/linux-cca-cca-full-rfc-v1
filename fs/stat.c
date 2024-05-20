@@ -18,7 +18,7 @@
 #include <linux/syscalls.h>
 #include <linux/pagemap.h>
 #include <linux/compat.h>
-#include <linux/binfmts.h>
+// #include <linux/binfmts.h>
 
 #include <linux/uaccess.h>
 #include <asm/unistd.h>
@@ -231,7 +231,7 @@ static int vfs_statx(int dfd, struct filename *filename, int flags,
 
 retry:
 	error = filename_lookup(dfd, filename, lookup_flags, &path, NULL);
-	if (error)
+	if (error) 
 		goto out;
 
 	error = vfs_getattr(&path, stat, request_mask, flags);
@@ -268,9 +268,9 @@ int vfs_fstatat(int dfd, const char __user *filename,
 	struct filename *name;
 
 	name = getname_flags(filename, getname_statx_lookup_flags(statx_flags), NULL);
-	if (current->is_shelter) {
-		printk(KERN_INFO "name: %s, vfs_fstatat in stat.c\n", name->name);
-	}
+	// if (current->is_shelter) {
+	// 	printk(KERN_INFO "name: %s, vfs_fstatat in stat.c\n", name->name);
+	// }
 	ret = vfs_statx(dfd, name, statx_flags, stat, STATX_BASIC_STATS);
 	putname(name);
 
@@ -441,33 +441,29 @@ SYSCALL_DEFINE4(newfstatat, int, dfd, const char __user *, filename,
 	struct kstat stat;
 	int error;
 
-	if (current->is_shelter) {
-		printk(KERN_INFO "\nsyscall newfstatat in stat.c\n");
-		printk(KERN_INFO "dfd:%d, flag:%d\n", dfd, flag);
-		printk(KERN_INFO "filename addr:0x%lx, statbuf addr:0x%lx\n", (unsigned long)filename, (unsigned long)statbuf);
-		int len = strnlen_user(filename, MAX_ARG_STRLEN);
-		printk(KERN_INFO "filename len:%d\n", len);
-		char *buf = kmalloc(len + 1, GFP_KERNEL);
-		if (!buf) {
-			printk(KERN_ERR "syscall newfstatat in stat.c, kmalloc failed\n");
-			return -ENOMEM;
-		}
-		// copy filename from user space to kernel space
-		if (copy_from_user(buf, filename, len)) {
-			printk(KERN_ERR "syscall newfstatat in stat.c, copy_from_user failed\n");
-			kfree(buf);
-			return -EFAULT;
-		}
-		printk(KERN_INFO "filename:%s\n", buf);
-		kfree(buf);
-	}
+	// if (current->is_shelter) {
+	// 	printk(KERN_INFO "\nsyscall newfstatat in stat.c\n");
+	// 	printk(KERN_INFO "dfd:%d, flag:%d\n", dfd, flag);
+	// 	printk(KERN_INFO "filename addr:0x%lx, statbuf addr:0x%lx, struct stat size:0x%lx", (unsigned long)filename, (unsigned long)statbuf, sizeof(struct stat));
+	// 	int len = strnlen_user(filename, MAX_ARG_STRLEN);
+	// 	printk(KERN_INFO "filename len:%d\n", len);
+	// 	char *buf = kmalloc(len + 1, GFP_KERNEL);
+	// 	if (!buf) {
+	// 		printk(KERN_ERR "syscall newfstatat in stat.c, kmalloc failed\n");
+	// 		return -ENOMEM;
+	// 	}
+	// 	// copy filename from user space to kernel space
+	// 	if (copy_from_user(buf, filename, len)) {
+	// 		printk(KERN_ERR "syscall newfstatat in stat.c, copy_from_user failed\n");
+	// 		kfree(buf);
+	// 		return -EFAULT;
+	// 	}
+	// 	printk(KERN_INFO "filename:%s\n", buf);
+	// 	kfree(buf);
+	// }
 	error = vfs_fstatat(dfd, filename, &stat, flag);
-	if (error && current->is_shelter) {
-		printk(KERN_ERR "\nsyscall newfstatat in stat.c, vfs_fstatat failed\n");
+	if (error)
 		return error;
-	} else if (error) {
-		return error;
-	}
 	return cp_new_stat(&stat, statbuf);
 }
 #endif

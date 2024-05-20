@@ -50,7 +50,7 @@
 #include <asm/page.h>
 #include <linux/syscalls.h>
 #include <linux/types.h>
-#include <linux/arm-smccc.h>
+// #include <linux/arm-smccc.h>
 
 extern int do_mprotect_pkey(unsigned long start, size_t len, unsigned long prot, int pkey);
 
@@ -398,8 +398,7 @@ static unsigned long elf_map(struct file *filep, unsigned long addr,
 		unsigned long total_size)
 {
 	if (current->is_shelter) {
-		printk(KERN_INFO "call elfmap in binfmt_elf.c\n");
-		printk(KERN_INFO "call elf_map in binfmt_elf.c\n");
+		printk(KERN_INFO "\ncall elf_map in binfmt_elf.c\n");
 	}
 	unsigned long map_addr;
 	unsigned long size = eppnt->p_filesz + ELF_PAGEOFFSET(eppnt->p_vaddr);
@@ -421,45 +420,37 @@ static unsigned long elf_map(struct file *filep, unsigned long addr,
 	* the end. (which unmap is needed for ELF images with holes.)
 	*/
 	if (total_size) {
-		if (current->is_shelter) {
-			printk(KERN_INFO "interpreter total_size: %lu = 0x%lx, elf_map in binfmt_elf.c\n", total_size, total_size);
-		}
 		total_size = ELF_PAGEALIGN(total_size);
-		if (current->is_shelter) {
-			printk(KERN_INFO "after align total_size: %lu = 0x%lx, elf_map in binfmt_elf.c\n", total_size, total_size);
-			loff_t ld_pos = off;
-			printk(KERN_INFO "mmap interpreter in elf_map from binfmt_elf.c! addr = 0x%lx\n", addr);
-			map_addr = ksys_mmap_pgoff(addr, total_size, prot, MAP_SHARED, current->fd_cma, 0);
-			printk(KERN_INFO "mmap interpreter result: map_addr = 0x%lx\n", map_addr);
-			if (addr != 0) {
-				map_addr = ksys_mmap_pgoff(addr, total_size, prot, MAP_FIXED | MAP_SHARED, current->fd_cma, 0);
+		if (current->is_shelter && total_size) {
+			printk(KERN_INFO "elf_map ELF/interpreter: addr = 0x%lx, total_size = 0x%lx, size = 0x%lx\n", addr, total_size, size);
+			if (addr == 0) {
+				map_addr = ksys_mmap_pgoff(addr, total_size, prot, MAP_SHARED, current->fd_cma, off);
 			} else {
-				map_addr = ksys_mmap_pgoff(addr, total_size, prot, MAP_SHARED, current->fd_cma, 0);
+				map_addr = ksys_mmap_pgoff(addr, total_size, prot, MAP_FIXED | MAP_SHARED, current->fd_cma, off);
 			}
-			printk(KERN_INFO "mmap interpreter result: map_addr = 0x%lx, end = 0x%lx\n", map_addr, map_addr + total_size);
-			vfs_read(filep, (void*)map_addr, total_size, &ld_pos); //copy ld section to cma memory
-			if((prot & PROT_EXEC)!=0)
-			{
-				do_mprotect_pkey(map_addr, total_size, PROT_EXEC|PROT_READ, -1);
-			}
-			else if((prot & PROT_WRITE) == 0 )
-			{
-				do_mprotect_pkey(map_addr, total_size, PROT_READ, -1);
-			}
-			if (current->is_shelter) {
-				current->is_ld = 1;
+			printk(KERN_INFO "map result: addr = 0x%lx, len = 0x%lx, end = 0x%lx\n", map_addr, total_size, map_addr + total_size);
+			loff_t ld_pos = off;
+			vfs_read(filep, (void*)map_addr, total_size, &ld_pos); //copy ld to cma memory
+			if((prot & PROT_EXEC) != 0) {
+				do_mprotect_pkey(addr, total_size, PROT_EXEC|PROT_READ, -1);
+			} else if((prot & PROT_WRITE) == 0 ) {
+				do_mprotect_pkey(addr, total_size, PROT_READ, -1);
 			}
 		} else {
 			map_addr = vm_mmap(filep, addr, total_size, prot, type, off);
 		}
-		if (!BAD_ADDR(map_addr))
+		if (!BAD_ADDR(map_addr)) {
 			vm_munmap(map_addr+size, total_size-size);
+			if (current->is_shelter && total_size) {
+				printk(KERN_INFO "vm_munmap: addr = 0x%lx, len = 0x%lx, end = 0x%lx\n", map_addr+size, total_size-size, map_addr+total_size);
+			}
+		}
 	} else
 	{
 		if(current->is_shelter)
 		{
 			//2. .text, .data allocate cma memory to load elf section and construct page tables in this location
-			printk(KERN_INFO "shelter output binfmt_elf.c 1\n");
+			printk(KERN_INFO "load .text&.data to cma memory, addr=0x%lx, len=0x%lx, off=0x%lx\n", addr, size, off);
 			loff_t elf_pos = off;
 			map_addr = ksys_mmap_pgoff(addr, size, prot, MAP_FIXED | MAP_SHARED, current->fd_cma, 0);
 			vfs_read(filep, (void*)map_addr, size, &elf_pos); //copy elf section to cma memory
@@ -697,7 +688,6 @@ static unsigned long load_elf_interp(struct elfhdr *interp_elf_ex,
 		goto out;
 	}
 
-	current->is_ld = 1;
 	eppnt = interp_elf_phdata;
 	for (i = 0; i < interp_elf_ex->e_phnum; i++, eppnt++) {
 		if (eppnt->p_type == PT_LOAD) {
