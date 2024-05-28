@@ -30,7 +30,8 @@ SYSCALL_DEFINE6(mmap, unsigned long, addr, unsigned long, len,
 		return -EINVAL;
 	unsigned long res = 0;
 	struct file *filep = NULL;
-	if (current->is_shelter){
+	struct arm_smccc_res smccc_res;
+	if (current->is_shelter) {
 		printk(KERN_INFO "\nsyscall mmap in kernel/sys.c\n");
 		if (!(flags & MAP_ANONYMOUS)) { // Not MAP_ANONYMOUS
 			filep = fget(fd);
@@ -38,16 +39,20 @@ SYSCALL_DEFINE6(mmap, unsigned long, addr, unsigned long, len,
 				printk(KERN_ERR "get filep failed!\n");
 				return -EBADF;
 			}
-			printk(KERN_INFO "mmap filename:%s, addr = 0x%lx, len = 0x%lx, off = 0x%lx\n",filep->f_path.dentry->d_iname, addr, len, off);
+			if (strncmp(filep->f_path.dentry->d_iname, "memfd:", 6) == 0) {
+				// File name starts with "memfd:"
+				printk(KERN_INFO "mmap %s, addr = 0x%lx, len = 0x%lx, off = 0x%lx\n",filep->f_path.dentry->d_iname, addr, len, off);
+				// goto origin;
+			} else 
+				printk(KERN_INFO "mmap filename:%s, addr = 0x%lx, len = 0x%lx, off = 0x%lx\n",filep->f_path.dentry->d_iname, addr, len, off);
 		} else { // MAP_ANONYMOUS
 			printk(KERN_INFO "MAP_ANONYMOUS: addr = 0x%lx, len = 0x%lx, off = 0x%lx\n", addr, len, off);
 		}
 		if (addr != 0) {
-			res = ksys_mmap_pgoff(addr, len, prot, MAP_FIXED | MAP_SHARED, current->fd_cma, off >> PAGE_SHIFT);
+			res = ksys_mmap_pgoff(addr, len, prot, MAP_FIXED | MAP_SHARED | MAP_LOCKED, current->fd_cma, off >> PAGE_SHIFT);
 		} else {
-			res = ksys_mmap_pgoff(addr, len, prot, MAP_SHARED, current->fd_cma, off >> PAGE_SHIFT);
+			res = ksys_mmap_pgoff(addr, len, prot, MAP_SHARED | MAP_LOCKED, current->fd_cma, off >> PAGE_SHIFT);
 		}
-		struct arm_smccc_res smccc_res;
 		arm_smccc_smc(0x80000FF2, res, 0, 0, 0, 0, 0, 0, &smccc_res);
 		if (!(flags & MAP_ANONYMOUS)) { // Not MAP_ANONYMOUS
 			printk(KERN_INFO "mmap filename:%s, addr/paddr = 0x%lx/0x%lx, len = 0x%lx, end = 0x%lx\n", filep->f_path.dentry->d_iname, res, smccc_res.a0, len, res + len);
@@ -62,10 +67,12 @@ SYSCALL_DEFINE6(mmap, unsigned long, addr, unsigned long, len,
 			do_mprotect_pkey(res, len, PROT_READ, -1);
 		}
 	} else {
+// origin:;
 		res = ksys_mmap_pgoff(addr, len, prot, flags, fd, off >> PAGE_SHIFT);
 	}
 	if (current->is_shelter) {
-		printk(KERN_INFO "syscall mmap result: addr = 0x%lx, len = 0x%lx, end = 0x%lx\n", res, len, res + len);
+		printk(KERN_INFO "syscall mmap result: addr/paddr = 0x%lx/0x%lx, len = 0x%lx, end = 0x%lx\n", res, smccc_res.a0, len, res + len);
+		arm_smccc_smc(0x80000FF3, res, 0, 0, 0, 0, 0, 0, &smccc_res);
 	}
 	return res;
 }

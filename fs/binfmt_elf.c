@@ -1316,7 +1316,7 @@ out_free_interp:
 	//3. bss remap the bss to the cma page, and construct page table
 	if(current->is_shelter)
 	{
-		printk("shelter output binfmt_elf.c 2\n");
+		printk("remap the bss to the cma page\n");
 		int start = ELF_PAGEALIGN(elf_bss);
 		int end = ELF_PAGEALIGN(elf_brk);
 		ksys_mmap_pgoff(start, end-start, PROT_READ | PROT_WRITE, MAP_FIXED | MAP_SHARED, current->fd_cma, 0);

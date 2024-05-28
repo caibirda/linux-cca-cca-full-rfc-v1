@@ -2713,7 +2713,7 @@ pid_t kernel_clone(struct kernel_clone_args *args)
 	//shelter_clone
 	if(current->is_shelter)
 	{
-		printk("shelter output fork.c\n");
+		printk(KERN_INFO "kernel_clone in fork.c\n");
 		p->is_shelter = 1;
 		p->gpt_id = current->gpt_id;
 		p->fd_cma = current->fd_cma;

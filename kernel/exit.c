@@ -919,8 +919,9 @@ void __noreturn do_exit(long code)
 	//shelter_task_exit
 	if(tsk->is_shelter)
 	{
+		// dump_stack();
 		struct pt_regs *task_regs = task_pt_regs(get_current());
-		printk("exit 1: do_exit in exit.c, pc=0x%lx, sp=0x%lx\n", task_regs->pc, task_regs->sp);
+		printk("exit 1: do_exit in exit.c, pc=0x%llx, sp=0x%llx\n", task_regs->pc, task_regs->sp);
 		struct arm_smccc_res smccc_res;
 		arm_smccc_smc(0x80000FFF, (unsigned long) tsk, tsk->pid, 0, 0, 0, 0, 0, &smccc_res);
 	}
@@ -1017,11 +1018,12 @@ do_group_exit(int exit_code)
 		}
 		spin_unlock_irq(&sighand->siglock);
 	}
-
+	
 	if(current->is_shelter)
 	{
+		// dump_stack();
 		struct pt_regs *task_regs = task_pt_regs(get_current());
-		printk("exit 2: do_group_exit in exit.c, pc=0x%lx, sp=0x%lx\n", task_regs->pc, task_regs->sp);
+		printk("exit 2: do_group_exit in exit.c, pc=0x%llx, sp=0x%llx\n", task_regs->pc, task_regs->sp);
 		struct arm_smccc_res smccc_res;
 		//shelter destruct
 		arm_smccc_smc(0x80000FF0, (unsigned long) current, current->pid, 0, 0, 0, 0, 0, &smccc_res);
