@@ -4662,7 +4662,7 @@ static vm_fault_t do_fault(struct vm_fault *vmf)
 	}
 	// if(current->is_shelter && current->is_created)
 	// {
-	// 	printk(KERN_INFO "SMC 0x80000F01(SET_PAGE) pid: %d, addr: 0x%lx, pte: 0x%llx in do_fault from memory.c\n", current->pid, vmf->address, vmf->pte->pte);
+	//	// printk(KERN_INFO "SMC 0x80000F01(SET_PAGE) pid: %d, addr: 0x%lx, pte: 0x%llx in do_fault from memory.c\n", current->pid, vmf->address, vmf->pte->pte);
 	// 	struct arm_smccc_res smccc_res;
 	// 	arm_smccc_smc(0x80000F01, current->pid, vmf->address, PAGE_SIZE, 0, 0, 0, 0, &smccc_res);
 	// 	// 在kernel中对于enclave page table的处理，shelter并没有忽视这一点

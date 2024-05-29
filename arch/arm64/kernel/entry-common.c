@@ -656,19 +656,19 @@ asmlinkage void noinstr el0t_64_sync_handler(struct pt_regs *regs)
 	unsigned long sysno = regs->regs[8];
 	int gpt_id;
 	if (current->is_shelter) {
-		printk(KERN_INFO "\nel0t_64_sync_handler: sysno = 0x%lx, sp = 0x%lx, pc = 0x%lx, esr = 0x%lx\n", sysno, regs->sp, regs->pc, esr);
+		printk(KERN_INFO "\npid %d el0t_64_sync_handler: sysno = %d, sp = 0x%lx, pc = 0x%lx, esr = 0x%lx\n", current->pid, sysno, regs->sp, regs->pc, esr);
 	}
 
 	switch (ESR_ELx_EC(esr)) {
 	case ESR_ELx_EC_SVC64:
 		if (current->is_shelter) {
-			printk(KERN_INFO "el0_svc in el0t_64_sync_handler: sysno = 0x%lx\n", sysno);
+			printk(KERN_INFO "pid %d el0_svc in el0t_64_sync_handler: sysno = %d\n", current->pid, sysno);
 		}
 		el0_svc(regs);
 		if(sysno == __NR_shelter_exec && current->is_shelter) {
 			// trap to EL3 to create the new shelter app environment. ENC_NEW_TEST 0x80000FFE
-			// printk("shelter output syscall.c\n");
-			// printk("origin gpt_id is %d\n",gpt_id);
+			printk(KERN_INFO "pid %d sysno = __NR_shelter_exec\n", current->pid);
+			printk(KERN_INFO "origin gpt_id is %d\n",gpt_id);
 			gpt_id = ksys_ioctl(current->fd_cma, 0x80000FFE, 0);
 			// printk(KERN_INFO "after ksys_ioctl, gpt_id is %d\n", gpt_id);
 			if(gpt_id <= 0) {
@@ -697,9 +697,6 @@ asmlinkage void noinstr el0t_64_sync_handler(struct pt_regs *regs)
 		}
 		break;
 	case ESR_ELx_EC_DABT_LOW:
-		// if (current->is_shelter) {
-		// 	dump_stack();
-		// }
 		el0_da(regs, esr);
 		break;
 	case ESR_ELx_EC_IABT_LOW:
