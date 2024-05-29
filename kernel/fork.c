@@ -2711,7 +2711,8 @@ pid_t kernel_clone(struct kernel_clone_args *args)
 	}
 
 	//shelter_clone
-	if (current->is_shelter) {
+	if(current->is_shelter)
+	{
 		printk(KERN_INFO "kernel_clone in fork.c\n");
 		p->is_shelter = 1;
 		p->gpt_id = current->gpt_id;
@@ -2720,32 +2721,33 @@ pid_t kernel_clone(struct kernel_clone_args *args)
 		p->finish_do_anonymous_page = current->finish_do_anonymous_page;
 		struct arm_smccc_res smccc_res;
 		//thread
-		if (clone_flags & CLONE_VM) { 
-			printk(KERN_INFO "thread in kernel_fork, current pid:%d, child pid:%d\n", current->pid, p->pid);
+		if(clone_flags & CLONE_VM)
+		{  
 			//assign a share buffer for later syscall support 64kb
-			unsigned long task_shared_virt = ksys_mmap_pgoff(NULL, SHELTER_TASK_SHARED_LENGTH,
+			unsigned long task_shared_virt = ksys_mmap_pgoff(0, SHELTER_TASK_SHARED_LENGTH,
 						PROT_READ | PROT_WRITE, MAP_SHARED, current->fd_cma, 0);
 			//assign a signal_stack buffer for later signal handling support, a page
-			unsigned long task_singal_stack_virt = ksys_mmap_pgoff(NULL, SHELTER_TASK_SIGNAL_STACK_LENGTH,
+			unsigned long task_singal_stack_virt = ksys_mmap_pgoff(0, SHELTER_TASK_SIGNAL_STACK_LENGTH,
 						PROT_READ | PROT_WRITE, MAP_SHARED, current->fd_cma, 0);
 			p->task_signal_stack_virt = task_singal_stack_virt;
 			//shelter_clone
-			arm_smccc_smc(0x80000F03, (unsigned long)p, current->pid, p->pid, 0, 0, 0, 0, &smccc_res);
+			arm_smccc_smc(0x80000F03, (unsigned long) p, current->pid, p->pid, 0, 0, 0, 0, &smccc_res);
 			//enc_nc_ns
 			arm_smccc_smc(0x80000FFD, p->pid, task_shared_virt, task_singal_stack_virt, 0, 0, 0, 0, &smccc_res);
 		}
 		//fork
-		else {
-			printk(KERN_INFO "current pid %d fork in kernel_clone, child pid:%d\n", current->pid, p->pid);
-			unsigned long task_shared_virt = ksys_mmap_pgoff(NULL, SHELTER_TASK_SHARED_LENGTH,
+		else
+		{	
+			unsigned long task_shared_virt = ksys_mmap_pgoff(0, SHELTER_TASK_SHARED_LENGTH,
 						PROT_READ | PROT_WRITE, MAP_SHARED, current->fd_cma, 0);
-			unsigned long task_singal_stack_virt = ksys_mmap_pgoff(NULL, SHELTER_TASK_SIGNAL_STACK_LENGTH,
+			unsigned long task_singal_stack_virt = ksys_mmap_pgoff(0, SHELTER_TASK_SIGNAL_STACK_LENGTH,
 						PROT_READ | PROT_WRITE, MAP_SHARED, current->fd_cma, 0);
 			//shelter_clone
-			arm_smccc_smc(0x80000F03, (unsigned long)p, current->pid, p->pid, 1, 0, 0, 0, &smccc_res);
+			arm_smccc_smc(0x80000F03, (unsigned long) p, current->pid, p->pid, 1, 0, 0, 0, &smccc_res);
 			//enc_nc_ns
 			arm_smccc_smc(0x80000FFD, p->pid, task_shared_virt, task_singal_stack_virt, 0, 0, 0, 0, &smccc_res);
 		}
+		
 	}
 	wake_up_new_task(p);
 

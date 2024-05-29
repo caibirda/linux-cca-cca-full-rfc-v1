@@ -32,7 +32,7 @@ SYSCALL_DEFINE6(mmap, unsigned long, addr, unsigned long, len,
 	struct file *filep = NULL;
 	struct arm_smccc_res smccc_res;
 	if (current->is_shelter) {
-		printk(KERN_INFO "\npid %d syscall mmap in kernel/sys.c\n", current->pid);
+		printk(KERN_INFO "\nsyscall mmap in kernel/sys.c\n");
 		if (!(flags & MAP_ANONYMOUS)) { // Not MAP_ANONYMOUS
 			filep = fget(fd);
 			if (!filep) {
@@ -71,8 +71,8 @@ SYSCALL_DEFINE6(mmap, unsigned long, addr, unsigned long, len,
 		res = ksys_mmap_pgoff(addr, len, prot, flags, fd, off >> PAGE_SHIFT);
 	}
 	if (current->is_shelter) {
-		printk(KERN_INFO "syscall mmap result: addr/paddr = 0x%lx/0x%lx, len = 0x%lx, end = 0x%lx\n\n", res, smccc_res.a0, len, res + len);
-		// arm_smccc_smc(0x80000FF3, res, 0, 0, 0, 0, 0, 0, &smccc_res);
+		printk(KERN_INFO "syscall mmap result: addr/paddr = 0x%lx/0x%lx, len = 0x%lx, end = 0x%lx\n", res, smccc_res.a0, len, res + len);
+		arm_smccc_smc(0x80000FF3, res, 0, 0, 0, 0, 0, 0, &smccc_res);
 	}
 	return res;
 }

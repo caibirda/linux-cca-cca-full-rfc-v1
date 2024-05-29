@@ -1305,7 +1305,7 @@ static long do_sys_openat2(int dfd, const char __user *filename,
 	if (IS_ERR(tmp))
 		return PTR_ERR(tmp);
 	if (current->is_shelter) {
-		printk(KERN_INFO "pid %d open filename: %s\n", current->pid, tmp->name);
+		printk(KERN_INFO "open filename: %s\n", tmp->name);
 	}
 
 	fd = get_unused_fd_flags(how->flags);
