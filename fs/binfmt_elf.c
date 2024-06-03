@@ -356,8 +356,8 @@ create_elf_tables(struct linux_binprm *bprm, const struct elfhdr *exec,
 			return -EFAULT;
 		// if (current->is_shelter) {
 		// 	struct arm_smccc_res smccc_res;
-		// 	arm_smccc_smc(0x80000FF3, p, 0, 0, 0, 0, 0, 0, &smccc_res);
-		// 	arm_smccc_smc(0x80000FF3, sp, 0, 0, 0, 0, 0, 0, &smccc_res);
+		// 	arm_smccc_smc(0x80000FF3, p, current->pid, 0, 0, 0, 0, 0, &smccc_res);
+		// 	arm_smccc_smc(0x80000FF3, sp, current->pid, 0, 0, 0, 0, 0, &smccc_res);
 		// 	sp++;
 		// } else {
 		// 	sp++;

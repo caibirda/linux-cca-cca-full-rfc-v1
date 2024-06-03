@@ -32,7 +32,7 @@ SYSCALL_DEFINE6(mmap, unsigned long, addr, unsigned long, len,
 	struct file *filep = NULL;
 	struct arm_smccc_res smccc_res;
 	if (current->is_shelter) {
-		printk(KERN_INFO "\npid %d syscall mmap in kernel/sys.c\n", current->pid);
+		printk(KERN_INFO "\nsyscall mmap in kernel/sys.c\n");
 		if (!(flags & MAP_ANONYMOUS)) { // Not MAP_ANONYMOUS
 			filep = fget(fd);
 			if (!filep) {
@@ -53,13 +53,16 @@ SYSCALL_DEFINE6(mmap, unsigned long, addr, unsigned long, len,
 		} else {
 			res = ksys_mmap_pgoff(addr, len, prot, MAP_SHARED | MAP_LOCKED, current->fd_cma, off >> PAGE_SHIFT);
 		}
-		arm_smccc_smc(0x80000FF2, res, 0, 0, 0, 0, 0, 0, &smccc_res);
+		// arm_smccc_smc(0x80000FF2, res, 0, 0, 0, 0, 0, 0, &smccc_res); // panic in EL3 translation_va!
 		if (!(flags & MAP_ANONYMOUS)) { // Not MAP_ANONYMOUS
-			printk(KERN_INFO "mmap filename:%s, addr/paddr = 0x%lx/0x%lx, len = 0x%lx, end = 0x%lx\n", filep->f_path.dentry->d_iname, res, smccc_res.a0, len, res + len);
+			// printk(KERN_INFO "mmap filename:%s, addr/paddr = 0x%lx/0x%lx, len = 0x%lx, end = 0x%lx\n", filep->f_path.dentry->d_iname, res, smccc_res.a0, len, res + len);
+			printk(KERN_INFO "mmap filename:%s, addr = 0x%lx, len = 0x%lx, end = 0x%lx\n", filep->f_path.dentry->d_iname, res, len, res + len);
 			loff_t file_pos = off;
 			vfs_read(filep, (void*)res, len, &file_pos);
 		} else { // MAP_ANONYMOUS
-			printk(KERN_INFO "MAP_ANONYMOUS result: addr/paddr = 0x%lx/0x%lx, len = 0x%lx, end = 0x%lx\n", res, smccc_res.a0, len, res + len);
+			// printk(KERN_INFO "MAP_ANONYMOUS result: addr/paddr = 0x%lx/0x%lx, len = 0x%lx, end = 0x%lx\n", res, smccc_res.a0, len, res + len);
+			printk(KERN_INFO "MAP_ANONYMOUS result: addr = 0x%lx, len = 0x%lx, end = 0x%lx\n", res, len, res + len);
+
 		}
 		if ((prot & PROT_EXEC) != 0) { // PROT_EXEC
 			do_mprotect_pkey(res, len, PROT_EXEC|PROT_READ, -1);
@@ -72,7 +75,7 @@ SYSCALL_DEFINE6(mmap, unsigned long, addr, unsigned long, len,
 	}
 	if (current->is_shelter) {
 		printk(KERN_INFO "syscall mmap result: addr/paddr = 0x%lx/0x%lx, len = 0x%lx, end = 0x%lx\n\n", res, smccc_res.a0, len, res + len);
-		// arm_smccc_smc(0x80000FF3, res, 0, 0, 0, 0, 0, 0, &smccc_res);
+		// arm_smccc_smc(0x80000FF3, res, current->pid, 0, 0, 0, 0, 0, &smccc_res);
 	}
 	return res;
 }

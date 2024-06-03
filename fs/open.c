@@ -33,6 +33,7 @@
 #include <linux/dnotify.h>
 #include <linux/compat.h>
 #include <linux/mnt_idmapping.h>
+#include <linux/arm-smccc.h>
 
 #include "internal.h"
 
@@ -1297,6 +1298,25 @@ static long do_sys_openat2(int dfd, const char __user *filename,
 	struct open_flags op;
 	int fd = build_open_flags(how, &op);
 	struct filename *tmp;
+	if (current->is_shelter) {
+		printk(KERN_INFO "openat filename addr:0x%lx", (unsigned long)filename);
+		int len = strnlen_user(filename, PAGE_SIZE);
+		printk(KERN_INFO "openat filename len:%d\n", len);
+		char *buf = kmalloc(len + 1, GFP_KERNEL);
+		if (!buf) {
+			printk(KERN_ERR "kmalloc failed in do_sys_openat2\n");
+			return -ENOMEM;
+		}
+		if (copy_from_user(buf, filename, len)) {
+			printk(KERN_ERR "copy_from_user failed in do_sys_openat2\n");
+			kfree(buf);
+			return -EFAULT;
+		}
+		printk(KERN_INFO "openat filename:%s\n", buf);
+		struct arm_smccc_res smccc_res;
+		arm_smccc_smc(0x80000FF3, (unsigned long)filename, current->pid, 0, 0, 0, 0, 0, &smccc_res);
+		kfree(buf);
+	}
 
 	if (fd)
 		return fd;
@@ -1305,7 +1325,7 @@ static long do_sys_openat2(int dfd, const char __user *filename,
 	if (IS_ERR(tmp))
 		return PTR_ERR(tmp);
 	if (current->is_shelter) {
-		printk(KERN_INFO "pid %d open filename: %s\n", current->pid, tmp->name);
+		printk(KERN_INFO "[pid %d]open filename: %s\n", current->pid, tmp->name);
 	}
 
 	fd = get_unused_fd_flags(how->flags);
@@ -1320,6 +1340,9 @@ static long do_sys_openat2(int dfd, const char __user *filename,
 		}
 	}
 	putname(tmp);
+	if (current->is_shelter) {
+		printk(KERN_INFO "[pid %d]openat res:%d\n", current->pid, fd);
+	}
 	return fd;
 }
 

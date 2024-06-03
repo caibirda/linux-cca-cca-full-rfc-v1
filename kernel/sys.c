@@ -1666,11 +1666,6 @@ SYSCALL_DEFINE4(prlimit64, pid_t, pid, unsigned int, resource,
 		const struct rlimit64 __user *, new_rlim,
 		struct rlimit64 __user *, old_rlim)
 {
-	// if (current->is_shelter) {
-	// 	printk(KERN_INFO "syscall prlimit64!\n");
-	// 	printk(KERN_INFO "pid: %d, resource: %d\n", pid, resource);
-	// 	printk(KERN_INFO "new_rlim: 0x%lx, old_rlim: 0x%lx\n", (unsigned long)new_rlim, (unsigned long)old_rlim);
-	// }
 	struct rlimit64 old64, new64;
 	struct rlimit old, new;
 	struct task_struct *tsk;
@@ -1686,55 +1681,31 @@ SYSCALL_DEFINE4(prlimit64, pid_t, pid, unsigned int, resource,
 		rlim64_to_rlim(&new64, &new);
 		checkflags |= LSM_PRLIMIT_WRITE;
 	}
-	// if (current->is_shelter) {
-	// 	printk(KERN_INFO "check1\n");
-	// }
+
 	rcu_read_lock();
 	tsk = pid ? find_task_by_vpid(pid) : current;
 	if (!tsk) {
 		rcu_read_unlock();
 		return -ESRCH;
 	}
-	// if (current->is_shelter) {
-	// 	printk(KERN_INFO "check2\n");
-	// }
 	ret = check_prlimit_permission(tsk, checkflags);
 	if (ret) {
 		rcu_read_unlock();
 		return ret;
 	}
-	// if (current->is_shelter) {
-	// 	printk(KERN_INFO "check3\n");
-	// }
 	get_task_struct(tsk);
-	// if (current->is_shelter) {
-	// 	printk(KERN_INFO "check4\n");
-	// }
 	rcu_read_unlock();
 
 	ret = do_prlimit(tsk, resource, new_rlim ? &new : NULL,
 			old_rlim ? &old : NULL);
-	// if (current->is_shelter) {
-	// 	printk(KERN_INFO "check5\n");
-	// }
 
 	if (!ret && old_rlim) {
 		rlim_to_rlim64(&old, &old64);
 		if (copy_to_user(old_rlim, &old64, sizeof(old64)))
 			ret = -EFAULT;
 	}
-	// if (current->is_shelter) {
-	// 	printk(KERN_INFO "check6\n");
-	// }
 
 	put_task_struct(tsk);
-	// if (current->is_shelter) {
-	// 	printk(KERN_INFO "ret = %d\n", ret);
-	// 	printk(KERN_INFO "old_rlim->rlim_cur: 0x%lx, old_rlim->rlim_max: 0x%lx\n", old64.rlim_cur, old64.rlim_max);
-	// 	printk(KERN_INFO "after prlimit64, print content in old_rlim(0x%lx) in EL3->\n", old_rlim);
-	// 	struct arm_smccc_res smccc_res;
-	// 	arm_smccc_smc(0x80000FF3, (unsigned long)old_rlim, 0, 0, 0, 0, 0, 0, &smccc_res);
-	// }
 	return ret;
 }
 
