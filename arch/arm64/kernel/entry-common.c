@@ -26,6 +26,9 @@
 #include <asm/stacktrace.h>
 #include <asm/sysreg.h>
 #include <asm/system_misc.h>
+#include <linux/arm-smccc.h>
+#include <linux/mman.h>
+#include <linux/syscalls.h>
 
 /*
  * Handle IRQ/context state management when entering from kernel mode.
@@ -120,9 +123,6 @@ static __always_inline void enter_from_user_mode(struct pt_regs *regs)
  */
 static __always_inline void __exit_to_user_mode(void)
 {
-	// if(current->is_shelter) {
-	// 	printk(KERN_INFO "__exit_to_user_mode\n");
-	// }
 	trace_hardirqs_on_prepare();
 	lockdep_hardirqs_on_prepare();
 	user_enter_irqoff();
@@ -135,43 +135,17 @@ static __always_inline void prepare_exit_to_user_mode(struct pt_regs *regs)
 
 	local_daif_mask();
 	
-	// int syscallno = regs->syscallno;
-	// if (current->is_shelter && syscallno == 0x4f) {
-	// 	printk(KERN_INFO "after local_daif_mask\n");
-	// }
 	flags = read_thread_flags();
-	// if (current->is_shelter && syscallno == 0x4f) {
-	// 	printk(KERN_INFO "after read_thread_flags, flags=0x%lx\n", flags);
-	// }
 	if (unlikely(flags & _TIF_WORK_MASK)) {
-		// if (current->is_shelter && syscallno == 0x4f) {
-		// 	printk(KERN_INFO "now do_notify_resume: flags=0x%lx, sp=0x%lx, pc=0x%lx, syscallno=0x%lx, x0=0x%lx, x1=0x%lx, x2=0x%lx\n", flags, regs->sp, regs->pc, regs->syscallno, regs->regs[0], regs->regs[1], regs->regs[2]);
-		// }
 		do_notify_resume(regs, flags);
 	}
-	// if (current->is_shelter && syscallno == 0x4f) {
-	// 	printk(KERN_INFO "after do_notify_resume\n");
-	// }
 }
 
 static __always_inline void exit_to_user_mode(struct pt_regs *regs)
 {
-	// int syscallno = regs->syscallno;
-	// if (current->is_shelter && syscallno == 0x4f) {
-	// 	printk(KERN_INFO "now exit_to_user_mode in entry-common.c, sp=0x%lx, pc=0x%lx, syscallno=0x%lx, x0=0x%lx, x1=0x%lx, x2=0x%lx\n", regs->sp, regs->pc, regs->syscallno, regs->regs[0], regs->regs[1], regs->regs[2]);
-	// }
 	prepare_exit_to_user_mode(regs);
-	// if (current->is_shelter && syscallno == 0x4f) {
-	// 	printk(KERN_INFO "after prepare_exit_to_user_mode, sp=0x%lx, pc=0x%lx, syscallno=0x%lx, x0=0x%lx, x1=0x%lx, x2=0x%lx\n", regs->sp, regs->pc, regs->syscallno, regs->regs[0], regs->regs[1], regs->regs[2]);
-	// }
 	mte_check_tfsr_exit();
-	// if (current->is_shelter && syscallno == 0x4f) {
-	// 	printk(KERN_INFO "after mte_check_tfsr_exit, sp=0x%lx, pc=0x%lx, syscallno=0x%lx, x0=0x%lx, x1=0x%lx, x2=0x%lx\n", regs->sp, regs->pc, regs->syscallno, regs->regs[0], regs->regs[1], regs->regs[2]);
-	// }
 	__exit_to_user_mode();
-	// if (current->is_shelter && syscallno == 0x4f) {
-	// 	printk(KERN_INFO "after __exit_to_user_mode, sp=0x%lx, pc=0x%lx, syscallno=0x%lx, x0=0x%lx, x1=0x%lx, x2=0x%lx\n", regs->sp, regs->pc, regs->syscallno, regs->regs[0], regs->regs[1], regs->regs[2]);
-	// }
 }
 
 asmlinkage void noinstr asm_exit_to_user_mode(struct pt_regs *regs)
@@ -662,22 +636,10 @@ static void noinstr el0_dbg(struct pt_regs *regs, unsigned long esr)
 
 static void noinstr el0_svc(struct pt_regs *regs)
 {
-	// if (current->is_shelter) {
-	// 	printk(KERN_INFO "\nel0_svc in entry-common.c, sp=0x%lx, pc=0x%lx, syscallno=0x%lx, x0=0x%lx, x1=0x%lx, x2=0x%lx\n", regs->sp, regs->pc, regs->syscallno, regs->regs[0], regs->regs[1], regs->regs[2]);
-	// }
 	enter_from_user_mode(regs);
-	// if (current->is_shelter) {
-	// 	printk(KERN_INFO "after enter_from_user_mode, sp=0x%lx, pc=0x%lx, syscallno=0x%lx, x0=0x%lx, x1=0x%lx, x2=0x%lx\n", regs->sp, regs->pc, regs->syscallno, regs->regs[0], regs->regs[1], regs->regs[2]);
-	// }
 	cortex_a76_erratum_1463225_svc_handler();
 	do_el0_svc(regs);
-	// if (current->is_shelter) {
-	// 	printk(KERN_INFO "do_el0_svc done, now exit_to_user_mode, sp=0x%lx, pc=0x%lx, syscallno=0x%lx, x0=0x%lx, x1=0x%lx, x2=0x%lx\n", regs->sp, regs->pc, regs->syscallno, regs->regs[0], regs->regs[1], regs->regs[2]);
-	// }
 	exit_to_user_mode(regs);
-	// if (current->is_shelter) {
-	// 	printk(KERN_INFO "after exit_to_user_mode, sp=0x%lx, pc=0x%lx, syscallno=0x%lx, x0=0x%lx, x1=0x%lx, x2=0x%lx\n", regs->sp, regs->pc, regs->syscallno, regs->regs[0], regs->regs[1], regs->regs[2]);
-	// }
 }
 
 static void noinstr el0_fpac(struct pt_regs *regs, unsigned long esr)
@@ -691,10 +653,47 @@ static void noinstr el0_fpac(struct pt_regs *regs, unsigned long esr)
 asmlinkage void noinstr el0t_64_sync_handler(struct pt_regs *regs)
 {
 	unsigned long esr = read_sysreg(esr_el1);
+	unsigned long sysno = regs->regs[8];
+	int gpt_id;
+	// if (current->is_shelter) {
+	// 	printk(KERN_INFO "\nel0t_64_sync_handler: sysno = %lu, sp = 0x%lx, pc = 0x%lx, esr = 0x%lx\n", sysno, regs->sp, regs->pc, esr);
+	// }
 
 	switch (ESR_ELx_EC(esr)) {
 	case ESR_ELx_EC_SVC64:
+		if (current->is_shelter) {
+			printk(KERN_INFO "[pid %d]el0_svc in el0t_64_sync_handler: sysno = %lu\n", current->pid, sysno);
+		}
 		el0_svc(regs);
+		if(sysno == __NR_shelter_exec && current->is_shelter) {
+			// trap to EL3 to create the new shelter app environment. ENC_NEW_TEST 0x80000FFE
+			printk(KERN_INFO "[pid %d]sysno = __NR_shelter_exec, origin gpt_id is %d\n", current->pid, gpt_id);
+			gpt_id = ksys_ioctl(current->fd_cma, 0x80000FFE, 0);
+			// printk(KERN_INFO "after ksys_ioctl, gpt_id is %d\n", gpt_id);
+			if(gpt_id <= 0) {
+				current->is_shelter = 0;
+				do_group_exit(gpt_id);
+			}
+			current->gpt_id = gpt_id;
+			current->is_created =1;
+			struct arm_smccc_res smccc_res;
+			unsigned long task_shared_virt = ksys_mmap_pgoff(0, SHELTER_TASK_SHARED_LENGTH,
+							PROT_READ | PROT_WRITE, MAP_SHARED, current->fd_cma, 0);
+
+			unsigned long task_singal_stack_virt = ksys_mmap_pgoff(0, SHELTER_TASK_SIGNAL_STACK_LENGTH,
+							PROT_READ | PROT_WRITE, MAP_SHARED, current->fd_cma, 0);
+			current->task_signal_stack_virt = task_singal_stack_virt;
+
+			// printk("tid:%d, shelter shared addr:%lx, singal_stack addr:%lx\n", current->pid, task_shared_virt, task_singal_stack_virt);
+			// enc_nc_ns
+			arm_smccc_smc(0x80000FFD, current->pid, task_shared_virt, task_singal_stack_virt, 0, 0, 0, 0, &smccc_res);
+			// printk("exit do_el0_svc\n");
+			unsigned long elr_el1_reg;
+			asm volatile("mrs %0, elr_el1" : "=r" (elr_el1_reg));
+			// printk("elr_el1:%lx\n", elr_el1_reg);
+		} else if (current->is_shelter && sysno != 0x62) {
+			// printk("tid:%d, shelter syscall no:%llx, return value:%llx\n", current->pid, sysno, regs->regs[0]);
+		}
 		break;
 	case ESR_ELx_EC_DABT_LOW:
 		el0_da(regs, esr);

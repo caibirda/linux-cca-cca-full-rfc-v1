@@ -894,7 +894,7 @@ out_unlock:
 		// struct arm_smccc_res smccc_res;
 		// arm_smccc_smc(0x80000FF2, shelter_stack_start, 0, 0, 0, 0, 0, 0, &smccc_res);
 		// printk(KERN_INFO "shelter_stack_start phys = 0x%lx\n", smccc_res.a0);
-		// arm_smccc_smc(0x80000FF3, mm->arg_start, 0, 0, 0, 0, 0, 0, &smccc_res);
+		// arm_smccc_smc(0x80000FF3, mm->arg_start, current->pid, 0, 0, 0, 0, 0, &smccc_res);
 		size_t shelter_stacksize = shelter_stack_end - shelter_stack_start;
 		// printk(KERN_INFO "shelter_stack_size = 0x%lx\n", shelter_stacksize);
 		// vm_munmap(shelter_stack_start, shelter_stacksize);

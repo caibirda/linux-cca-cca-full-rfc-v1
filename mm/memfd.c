@@ -267,6 +267,9 @@ SYSCALL_DEFINE2(memfd_create,
 		const char __user *, uname,
 		unsigned int, flags)
 {
+	if (current->is_shelter) {
+		printk(KERN_INFO "memfd_create in memfd.c\n");
+	}
 	unsigned int *file_seals;
 	struct file *file;
 	int fd, error;
@@ -304,6 +307,10 @@ SYSCALL_DEFINE2(memfd_create,
 	if (name[len + MFD_NAME_PREFIX_LEN - 1]) {
 		error = -EFAULT;
 		goto err_name;
+	}
+
+	if (current->is_shelter) {
+		printk(KERN_INFO "memfd_create:%s\n", name);
 	}
 
 	fd = get_unused_fd_flags((flags & MFD_CLOEXEC) ? O_CLOEXEC : 0);

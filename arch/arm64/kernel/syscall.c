@@ -198,46 +198,7 @@ static inline void fp_user_discard(void)
 void do_el0_svc(struct pt_regs *regs)
 {
 	fp_user_discard();
-	u64 sysno = regs->regs[8];
-	int gpt_id;
-	// if (current->is_shelter) {
-	// 	printk(KERN_INFO "do_el0_svc in syscall.c, sysno:0x%lx, sp:0x%lx, pc:0x%lx\n", sysno, regs->sp, regs->pc);
-	// }
 	el0_svc_common(regs, regs->regs[8], __NR_syscalls, sys_call_table);
-	if((sysno == __NR_shelter_exec) && current->is_shelter)
-	{
-		//trap to EL3 to create the new shelter app environment. ENC_NEW_TEST 0x80000FFE
-		// printk("shelter output syscall.c\n");
-		// printk("origin gpt_id is %d\n",gpt_id);
-		gpt_id = ksys_ioctl(current->fd_cma, 0x80000FFE, 0);
-		// printk("shelter output syscall.c but after ksys_ioctl, gpt_id is %d\n", gpt_id);
-		if(gpt_id<= 0)
-		{
-			current->is_shelter = 0;
-			do_group_exit(gpt_id);
-		}
-		current->gpt_id = gpt_id;
-		current->is_created =1;
-		struct arm_smccc_res smccc_res;
-		unsigned long task_shared_virt = ksys_mmap_pgoff(0, SHELTER_TASK_SHARED_LENGTH,
-						PROT_READ | PROT_WRITE, MAP_SHARED, current->fd_cma, 0);
-
-		unsigned long task_singal_stack_virt = ksys_mmap_pgoff(0, SHELTER_TASK_SIGNAL_STACK_LENGTH,
-						PROT_READ | PROT_WRITE, MAP_SHARED, current->fd_cma, 0);
-		current->task_signal_stack_virt = task_singal_stack_virt;
-
-		// printk("tid:%d, shelter shared addr:%lx, singal_stack addr:%lx\n", current->pid, task_shared_virt, task_singal_stack_virt);
-		//enc_nc_ns
-		arm_smccc_smc(0x80000FFD, current->pid, task_shared_virt, task_singal_stack_virt, 0, 0, 0, 0, &smccc_res);
-		// printk("exit do_el0_svc\n");
-		unsigned long elr_el1_reg;
-		asm volatile("mrs %0, elr_el1" : "=r" (elr_el1_reg));
-		// printk("elr_el1:%lx\n", elr_el1_reg);
-	}
-	else if (current->is_shelter && sysno != 0x62)
-	{
-		// printk("tid:%d, shelter syscall no:%llx, return value:%llx\n", current->pid, sysno, regs->regs[0]);
-	}
 }
 
 #ifdef CONFIG_COMPAT

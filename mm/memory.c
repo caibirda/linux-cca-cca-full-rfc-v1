@@ -4121,11 +4121,11 @@ setpte:
 
 	/* No need to invalidate - it was non-present before */
 	update_mmu_cache(vma, vmf->address, vmf->pte);
-	if(current->is_shelter && current->is_created)
-	{
-		printk(KERN_INFO "finish_do_anonymous_page = 1 in do_anonymous_page from memory.c\n");
-		current->finish_do_anonymous_page = 1;
-	}
+	// if(current->is_shelter && current->is_created)
+	// {
+	// 	printk(KERN_INFO "finish_do_anonymous_page = 1 in do_anonymous_page from memory.c\n");
+	// 	current->finish_do_anonymous_page = 1;
+	// }
 unlock:
 	pte_unmap_unlock(vmf->pte, vmf->ptl);
 	return ret;

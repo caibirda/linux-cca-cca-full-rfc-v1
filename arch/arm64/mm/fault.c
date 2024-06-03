@@ -631,14 +631,14 @@ retry:
 	}
 	mmap_read_unlock(mm);
 
-	if(current->is_shelter && current->is_created && current->finish_do_anonymous_page)
-	{
-		printk(KERN_INFO "SApp handle page fault in fault.c, addr: 0x%lx\n", addr);
-		struct arm_smccc_res smccc_res;
-		// arm_smccc_smc(0x80000F01, current->pid, addr& PAGE_MASK, PAGE_SIZE, 0, 0, 0, 0, &smccc_res);
-		ksys_mmap_pgoff(addr& PAGE_MASK, PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_FIXED | MAP_SHARED, current->fd_cma, 0);
-		current->finish_do_anonymous_page = 0;
-	}
+	// if(current->is_shelter && current->is_created && current->finish_do_anonymous_page)
+	// {
+	// 	printk(KERN_INFO "SApp handle page fault in fault.c, addr: 0x%lx\n", addr);
+	// 	struct arm_smccc_res smccc_res;
+	// 	// arm_smccc_smc(0x80000F01, current->pid, addr& PAGE_MASK, PAGE_SIZE, 0, 0, 0, 0, &smccc_res);
+	// 	ksys_mmap_pgoff(addr& PAGE_MASK, PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_FIXED | MAP_SHARED, current->fd_cma, 0);
+	// 	current->finish_do_anonymous_page = 0;
+	// }
 	
 	/*
 	 * Handle the "normal" (no error) case first.
