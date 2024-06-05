@@ -2649,6 +2649,7 @@ pid_t kernel_clone(struct kernel_clone_args *args)
 		//assign a signal_stack buffer for later signal handling support, a page
 		task_singal_stack_virt = ksys_mmap_pgoff(NULL, SHELTER_TASK_SIGNAL_STACK_LENGTH,
 					PROT_READ | PROT_WRITE, MAP_SHARED, current->fd_cma, 0);
+		printk(KERN_INFO "after ksys_mmap_pgoff, task_shared_virt:%lx, task_singal_stack_virt:%lx\n", task_shared_virt, task_singal_stack_virt);
 	}
 	u64 clone_flags = args->flags;
 	struct completion vfork;
@@ -2723,6 +2724,7 @@ pid_t kernel_clone(struct kernel_clone_args *args)
 	//shelter_clone
 	if (current->is_shelter) {
 		printk(KERN_INFO "kernel_clone in fork.c: now SMC to clone & \n");
+		printk(KERN_INFO "task_shared_virt:%lx, task_singal_stack_virt:%lx\n", task_shared_virt, task_singal_stack_virt);
 		p->is_shelter = 1;
 		p->gpt_id = current->gpt_id;
 		p->fd_cma = current->fd_cma;
@@ -2741,6 +2743,7 @@ pid_t kernel_clone(struct kernel_clone_args *args)
 		//fork
 		else {
 			printk(KERN_INFO "current pid %d fork in kernel_clone, child pid:%d\n", current->pid, p->pid);
+			p->task_signal_stack_virt = task_singal_stack_virt;
 			//shelter_clone
 			arm_smccc_smc(0x80000F03, (unsigned long)p, current->pid, p->pid, 1, 0, 0, 0, &smccc_res);
 			//enc_nc_ns

@@ -899,7 +899,7 @@ out_unlock:
 		// printk(KERN_INFO "shelter_stack_size = 0x%lx\n", shelter_stacksize);
 		// vm_munmap(shelter_stack_start, shelter_stacksize);
 		unsigned long map_addr = ksys_mmap_pgoff(shelter_stack_start, shelter_stacksize,
-						PROT_READ | PROT_WRITE, MAP_FIXED | MAP_SHARED, current->fd_cma, 0);
+						PROT_READ | PROT_WRITE, MAP_FIXED | MAP_PRIVATE, current->fd_cma, 0);
 		// printk(KERN_INFO "\nmap_addr va in setup_arg_pages from exec.c: 0x%lx\n", map_addr);
 		// arm_smccc_smc(0x80000FF2, map_addr, 0, 0, 0, 0, 0, 0, &smccc_res);
 		// printk(KERN_INFO "map_addr pa in setup_arg_pages from exec.c: 0x%lx\n\n", smccc_res.a0);
