@@ -423,46 +423,38 @@ static unsigned long elf_map(struct file *filep, unsigned long addr,
 		total_size = ELF_PAGEALIGN(total_size);
 		if (current->is_shelter && total_size) {
 			printk(KERN_INFO "elf_map ELF/interpreter: addr = 0x%lx, total_size = 0x%lx, size = 0x%lx\n", addr, total_size, size);
-			if (addr == 0) {
-				map_addr = ksys_mmap_pgoff(addr, total_size, prot, MAP_SHARED, current->fd_cma, off);
-			} else {
-				map_addr = ksys_mmap_pgoff(addr, total_size, prot, MAP_FIXED | MAP_SHARED, current->fd_cma, off);
-			}
+			map_addr = ksys_mmap_pgoff(addr, total_size, prot, (addr ? MAP_FIXED : 0) | type | MAP_LOCKED, current->fd_cma, off);
 			printk(KERN_INFO "map result: addr = 0x%lx, len = 0x%lx, end = 0x%lx\n", map_addr, total_size, map_addr + total_size);
 			loff_t ld_pos = off;
-			vfs_read(filep, (void*)map_addr, total_size, &ld_pos); //copy ld to cma memory
-			if((prot & PROT_EXEC) != 0) {
-				do_mprotect_pkey(addr, total_size, PROT_EXEC|PROT_READ, -1);
-			} else if((prot & PROT_WRITE) == 0 ) {
-				do_mprotect_pkey(addr, total_size, PROT_READ, -1);
-			}
-		} else {
+            vfs_read(filep, (char *)map_addr, total_size, &ld_pos); // copy ld to cma memory
+            if ((prot & PROT_EXEC) != 0) {
+                do_mprotect_pkey(addr, total_size, PROT_EXEC | PROT_READ, -1);
+            } else if ((prot & PROT_WRITE) == 0) {
+                do_mprotect_pkey(addr, total_size, PROT_READ, -1);
+            }
+        } else {
 			map_addr = vm_mmap(filep, addr, total_size, prot, type, off);
 		}
 		if (!BAD_ADDR(map_addr)) {
 			vm_munmap(map_addr+size, total_size-size);
-			if (current->is_shelter && total_size) {
-				printk(KERN_INFO "vm_munmap: addr = 0x%lx, len = 0x%lx, end = 0x%lx\n", map_addr+size, total_size-size, map_addr+total_size);
-			}
-		}
-	} else
-	{
+            if (current->is_shelter && total_size) {
+                printk(KERN_INFO "vm_munmap addr:0x%lx, len:0x%lx, end:0x%lx\n", map_addr + size, total_size - size, map_addr + total_size);
+            }
+        }
+	} else {
 		if(current->is_shelter)
 		{
 			//2. .text, .data allocate cma memory to load elf section and construct page tables in this location
 			printk(KERN_INFO "load .text&.data to cma memory, addr=0x%lx, len=0x%lx, off=0x%lx\n", addr, size, off);
 			loff_t elf_pos = off;
-			map_addr = ksys_mmap_pgoff(addr, size, prot, MAP_FIXED | MAP_SHARED, current->fd_cma, 0);
-			vfs_read(filep, (void*)map_addr, size, &elf_pos); //copy elf section to cma memory
-			if((prot & PROT_EXEC)!=0)
-			{
-				do_mprotect_pkey(addr, size, PROT_EXEC|PROT_READ, -1);
-			}
-			else if((prot & PROT_WRITE) == 0 )
-			{
-				do_mprotect_pkey(addr, size, PROT_READ, -1);
-			}
-		}
+			map_addr = ksys_mmap_pgoff(addr, size, prot, MAP_FIXED | type | MAP_LOCKED, current->fd_cma, off);
+			vfs_read(filep, (char *)map_addr, size, &elf_pos); //copy elf section to cma memory
+            if ((prot & PROT_EXEC) != 0) {
+                do_mprotect_pkey(addr, size, PROT_EXEC | PROT_READ, -1);
+            } else if ((prot & PROT_WRITE) == 0) {
+                do_mprotect_pkey(addr, size, PROT_READ, -1);
+            }
+        }
 		else
 			map_addr = vm_mmap(filep, addr, size, prot, type, off);
 	}
@@ -1319,23 +1311,23 @@ out_free_interp:
 		printk("remap the bss to the cma page\n");
 		int start = ELF_PAGEALIGN(elf_bss);
 		int end = ELF_PAGEALIGN(elf_brk);
-		ksys_mmap_pgoff(start, end-start, PROT_READ | PROT_WRITE, MAP_FIXED | MAP_SHARED, current->fd_cma, 0);
+		ksys_mmap_pgoff(start, end-start, PROT_READ | PROT_WRITE, MAP_FIXED | MAP_PRIVATE, current->fd_cma, 0);
 	}
 
 	if (interpreter) { // dynamic?
-		if (current->is_shelter) {
-			printk(KERN_INFO "\nload_elf_binary in binfmt_elf.c: interpreter\n");
-			printk(KERN_INFO "interpreter: %s\n", interpreter->f_path.dentry->d_iname);
-			printk(KERN_INFO "load_elf_binary->load_elf_interp\n");
-		}
+		// if (current->is_shelter) {
+		// 	printk(KERN_INFO "\nload_elf_binary in binfmt_elf.c: interpreter\n");
+		// 	printk(KERN_INFO "interpreter: %s\n", interpreter->f_path.dentry->d_iname);
+		// 	printk(KERN_INFO "load_elf_binary->load_elf_interp\n");
+		// }
 		elf_entry = load_elf_interp(interp_elf_ex,
 					    interpreter,
 					    load_bias, interp_elf_phdata,
 					    &arch_state);
-		if (current->is_shelter) {
-			printk(KERN_INFO "load_elf_binary->load_elf_interp done\n");
-			printk(KERN_INFO "before adjust elf_entry = interp_load_addr: 0x%lx\n", elf_entry);
-		}
+		// if (current->is_shelter) {
+		// 	printk(KERN_INFO "load_elf_binary->load_elf_interp done\n");
+		// 	printk(KERN_INFO "before adjust elf_entry = interp_load_addr: 0x%lx\n", elf_entry);
+		// }
 		if (!IS_ERR_VALUE(elf_entry)) {
 			/*
 			 * load_elf_interp() returns relocation
@@ -1349,10 +1341,10 @@ out_free_interp:
 					(int)elf_entry : -EINVAL;
 			goto out_free_dentry;
 		}
-		if (current->is_shelter) {
-			printk(KERN_INFO "after adjust interp_load_addr: 0x%lx\n", interp_load_addr);
-			printk(KERN_INFO "after adjust elf_entry: 0x%lx\n\n", elf_entry);
-		}
+		// if (current->is_shelter) {
+		// 	printk(KERN_INFO "after adjust interp_load_addr: 0x%lx\n", interp_load_addr);
+		// 	printk(KERN_INFO "after adjust elf_entry: 0x%lx\n\n", elf_entry);
+		// }
 		reloc_func_desc = interp_load_addr;
 
 		allow_write_access(interpreter);

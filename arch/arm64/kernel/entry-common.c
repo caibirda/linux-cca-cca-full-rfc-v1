@@ -661,9 +661,9 @@ asmlinkage void noinstr el0t_64_sync_handler(struct pt_regs *regs)
 
 	switch (ESR_ELx_EC(esr)) {
 	case ESR_ELx_EC_SVC64:
-		if (current->is_shelter) {
-			printk(KERN_INFO "[pid %d]el0_svc in el0t_64_sync_handler: sysno = %lu\n", current->pid, sysno);
-		}
+		// if (current->is_shelter) {
+		// 	printk(KERN_INFO "[pid %d]el0_svc in el0t_64_sync_handler: sysno = %lu\n", current->pid, sysno);
+		// }
 		el0_svc(regs);
 		if(sysno == __NR_shelter_exec && current->is_shelter) {
 			// trap to EL3 to create the new shelter app environment. ENC_NEW_TEST 0x80000FFE
@@ -688,8 +688,8 @@ asmlinkage void noinstr el0t_64_sync_handler(struct pt_regs *regs)
 			// enc_nc_ns
 			arm_smccc_smc(0x80000FFD, current->pid, task_shared_virt, task_singal_stack_virt, 0, 0, 0, 0, &smccc_res);
 			// printk("exit do_el0_svc\n");
-			unsigned long elr_el1_reg;
-			asm volatile("mrs %0, elr_el1" : "=r" (elr_el1_reg));
+			// unsigned long elr_el1_reg;
+			// asm volatile("mrs %0, elr_el1" : "=r" (elr_el1_reg));
 			// printk("elr_el1:%lx\n", elr_el1_reg);
 		} else if (current->is_shelter && sysno != 0x62) {
 			// printk("tid:%d, shelter syscall no:%llx, return value:%llx\n", current->pid, sysno, regs->regs[0]);

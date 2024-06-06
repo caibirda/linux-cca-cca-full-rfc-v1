@@ -1462,6 +1462,14 @@ EXPORT_SYMBOL(filp_close);
  */
 SYSCALL_DEFINE1(close, unsigned int, fd)
 {
+	if (current->is_shelter) {
+		struct file *file = fget(fd);
+		if (file && strncmp(file->f_path.dentry->d_name.name, "SHELTER", 7) == 0) {
+			printk(KERN_ERR "[pid %d]trying to close fd:%d (%s)\n", current->pid, fd, file->f_path.dentry->d_name.name);
+			current->close_shelter = 1;
+			return 0;
+		}
+	}
 	int retval = close_fd(fd);
 
 	/* can't restart close syscall because file table entry was cleared */
