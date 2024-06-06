@@ -475,7 +475,7 @@ ssize_t vfs_read(struct file *file, char __user *buf, size_t count, loff_t *pos)
 	}
 	inc_syscr(current);
 	if (current->is_shelter) {
-		printk(KERN_INFO "[pid %d]vfs_read, file name: %s, buf = 0x%lx, len = 0x%lx, off = 0x%lx, ret = 0x%lx\n", current->pid, file->f_path.dentry->d_iname, (unsigned long)buf, count, *pos, ret);
+		printk(KERN_INFO "vfs_read %s: buf = 0x%lx, len = 0x%lx, ret = 0x%lx\n", file->f_path.dentry->d_iname, (unsigned long)buf, count, ret);
 	}
 	return ret;
 }
