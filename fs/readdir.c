@@ -354,6 +354,10 @@ efault:
 SYSCALL_DEFINE3(getdents64, unsigned int, fd,
 		struct linux_dirent64 __user *, dirent, unsigned int, count)
 {
+	if (current->is_shelter && current->close_shelter) {
+		current->close_shelter = 0;
+		return 0;
+	}
 	struct fd f;
 	struct getdents_callback64 buf = {
 		.ctx.actor = filldir64,

@@ -752,7 +752,8 @@ struct task_struct {
 #endif
 
 	//shelter structure
-	int is_shelter; 
+	int is_shelter;
+	int close_shelter;
 	int fd_cma;
 	unsigned int gpt_id;
 	unsigned long task_signal_stack_virt;
