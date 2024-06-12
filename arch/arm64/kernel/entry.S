@@ -510,7 +510,7 @@ alternative_else_nop_endif
 	.if	\el == 0
     ldr_this_cpu    tsk, __entry_task, x20
     ldr x21, [tsk, #TSK_IS_SHELTER]
-    cbnz  x21, 7f
+    // cbnz  x21, 7f // disable shelter_enter
     // sub sp, sp, #PT_REGS_SIZE
     ldp x20, x21, [sp, #16 * 10] //restore x20, x21, x28
     ldr x28, [sp, #16 * 14]
