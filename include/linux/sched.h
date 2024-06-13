@@ -734,6 +734,8 @@ struct kmap_ctrl {
 #endif
 };
 
+#define SHELTER_TASK_SHARED_LENGTH 0x10000
+#define SHELTER_TASK_SIGNAL_STACK_LENGTH 0x4000
 struct task_struct {
 #ifdef CONFIG_THREAD_INFO_IN_TASK
 	/*
@@ -749,6 +751,13 @@ struct task_struct {
 	unsigned int			saved_state;
 #endif
 
+	//shelter structure
+	int is_shelter; 
+	int fd_cma;
+	unsigned int gpt_id;
+	unsigned long task_signal_stack_virt;
+	int is_created;
+	int finish_do_anonymous_page;
 	/*
 	 * This begins the randomizable portion of task_struct. Only
 	 * scheduling-critical items should be added above here.

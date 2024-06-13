@@ -74,6 +74,7 @@
 #include "internal.h"
 
 #include <trace/events/sched.h>
+#include <linux/mman.h>
 
 static int bprm_creds_from_file(struct linux_binprm *bprm);
 
@@ -837,6 +838,10 @@ int setup_arg_pages(struct linux_binprm *bprm,
 	vma->vm_flags &= ~VM_STACK_INCOMPLETE_SETUP;
 
 	stack_expand = 131072UL; /* randomly 32*4k (or 2*64k) pages */
+	// if (current->is_shelter){
+	// 	printk("stack_expand = 1048576 in setup_arg_pages from exec.c\n");
+	// 	stack_expand = 1048576UL;// 256 pages;
+	// }
 	stack_size = vma->vm_end - vma->vm_start;
 	/*
 	 * Align this down to a page boundary as expand_stack
@@ -2021,7 +2026,7 @@ out_ret:
 	return retval;
 }
 
-static int do_execve(struct filename *filename,
+int do_execve(struct filename *filename,
 	const char __user *const __user *__argv,
 	const char __user *const __user *__envp)
 {
