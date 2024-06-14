@@ -328,13 +328,6 @@ create_elf_tables(struct linux_binprm *bprm, const struct elfhdr *exec,
 		return -EFAULT;
 
 	/* Now, let's put argc (and argv, envp if appropriate) on the stack */
-	// if (current->is_shelter) {
-	// 	printk(KERN_INFO "\nin create_elf_tables from binfmt_elf.c:\nargc: %d\n", argc);
-	// 	printk(KERN_INFO "sp: 0x%lx\n", sp);
-	// 	struct arm_smccc_res smccc_res;
-	// 	arm_smccc_smc(0x80000FF2, sp, 0, 0, 0, 0, 0, 0, &smccc_res);
-	// 	printk(KERN_INFO "sp phys: 0x%lx\n\n", smccc_res.a0);
-	// }
 	if (put_user(argc, sp++))
 		return -EFAULT;
 
@@ -342,26 +335,8 @@ create_elf_tables(struct linux_binprm *bprm, const struct elfhdr *exec,
 	p = mm->arg_end = mm->arg_start;
 	while (argc-- > 0) {
 		size_t len;
-		// if (current->is_shelter) {
-		// 	printk(KERN_INFO "\nin create_elf_tables from binfmt_elf.c:\nargc: %d\n", argc);
-		// 	printk(KERN_INFO "sp: 0x%lx\n", sp);
-		// 	printk(KERN_INFO "p: 0x%lx\n", p);
-		// 	struct arm_smccc_res smccc_res;
-		// 	arm_smccc_smc(0x80000FF2, sp, 0, 0, 0, 0, 0, 0, &smccc_res);
-		// 	printk(KERN_INFO "sp phys: 0x%lx\n", smccc_res.a0);
-		// 	arm_smccc_smc(0x80000FF2, p, 0, 0, 0, 0, 0, 0, &smccc_res);
-		// 	printk(KERN_INFO "p phys: 0x%lx\n\n", smccc_res.a0);
-		// }
 		if (put_user((elf_addr_t)p, sp++))
 			return -EFAULT;
-		// if (current->is_shelter) {
-		// 	struct arm_smccc_res smccc_res;
-		// 	arm_smccc_smc(0x80000FF3, p, current->pid, 0, 0, 0, 0, 0, &smccc_res);
-		// 	arm_smccc_smc(0x80000FF3, sp, current->pid, 0, 0, 0, 0, 0, &smccc_res);
-		// 	sp++;
-		// } else {
-		// 	sp++;
-		// }
 		len = strnlen_user((void __user *)p, MAX_ARG_STRLEN);
 		if (!len || len > MAX_ARG_STRLEN)
 			return -EINVAL;
@@ -442,9 +417,8 @@ static unsigned long elf_map(struct file *filep, unsigned long addr,
             }
         }
 	} else {
-		if(current->is_shelter)
-		{
-			//2. .text, .data allocate cma memory to load elf section and construct page tables in this location
+		if(current->is_shelter) {
+			// 2. .text, .data allocate cma memory to load elf section and construct page tables in this location
 			printk(KERN_INFO "load .text&.data to cma memory, addr=0x%lx, len=0x%lx, off=0x%lx\n", addr, size, off);
 			loff_t elf_pos = off;
 			map_addr = ksys_mmap_pgoff(addr, size, prot, MAP_FIXED | type | MAP_LOCKED, current->fd_cma, off);
@@ -1305,29 +1279,19 @@ out_free_interp:
 		retval = -EFAULT; /* Nobody gets to see this, but.. */
 		goto out_free_dentry;
 	}
-	//3. bss remap the bss to the cma page, and construct page table
-	if(current->is_shelter)
-	{
+	// 3. bss remap the bss to the cma page, and construct page table
+	if(current->is_shelter) {
 		printk("remap the bss to the cma page\n");
 		int start = ELF_PAGEALIGN(elf_bss);
 		int end = ELF_PAGEALIGN(elf_brk);
 		ksys_mmap_pgoff(start, end-start, PROT_READ | PROT_WRITE, MAP_FIXED | MAP_PRIVATE, current->fd_cma, 0);
 	}
 
-	if (interpreter) { // dynamic?
-		// if (current->is_shelter) {
-		// 	printk(KERN_INFO "\nload_elf_binary in binfmt_elf.c: interpreter\n");
-		// 	printk(KERN_INFO "interpreter: %s\n", interpreter->f_path.dentry->d_iname);
-		// 	printk(KERN_INFO "load_elf_binary->load_elf_interp\n");
-		// }
+	if (interpreter) {
 		elf_entry = load_elf_interp(interp_elf_ex,
 					    interpreter,
 					    load_bias, interp_elf_phdata,
 					    &arch_state);
-		// if (current->is_shelter) {
-		// 	printk(KERN_INFO "load_elf_binary->load_elf_interp done\n");
-		// 	printk(KERN_INFO "before adjust elf_entry = interp_load_addr: 0x%lx\n", elf_entry);
-		// }
 		if (!IS_ERR_VALUE(elf_entry)) {
 			/*
 			 * load_elf_interp() returns relocation
@@ -1341,10 +1305,6 @@ out_free_interp:
 					(int)elf_entry : -EINVAL;
 			goto out_free_dentry;
 		}
-		// if (current->is_shelter) {
-		// 	printk(KERN_INFO "after adjust interp_load_addr: 0x%lx\n", interp_load_addr);
-		// 	printk(KERN_INFO "after adjust elf_entry: 0x%lx\n\n", elf_entry);
-		// }
 		reloc_func_desc = interp_load_addr;
 
 		allow_write_access(interpreter);

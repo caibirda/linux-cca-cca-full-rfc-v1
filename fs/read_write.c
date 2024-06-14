@@ -474,7 +474,7 @@ ssize_t vfs_read(struct file *file, char __user *buf, size_t count, loff_t *pos)
 		add_rchar(current, ret);
 	}
 	inc_syscr(current);
-	if (current->is_shelter) {
+	if (current->is_shelter || current->is_debug) {
 		printk(KERN_INFO "vfs_read %s: buf = 0x%lx, len = 0x%lx, ret = 0x%lx\n", file->f_path.dentry->d_iname, (unsigned long)buf, count, ret);
 	}
 	return ret;
@@ -622,7 +622,8 @@ ssize_t ksys_read(unsigned int fd, char __user *buf, size_t count)
 
 SYSCALL_DEFINE3(read, unsigned int, fd, char __user *, buf, size_t, count)
 {
-	return ksys_read(fd, buf, count);
+	ssize_t ret = ksys_read(fd, buf, count);
+	return ret;
 }
 
 ssize_t ksys_write(unsigned int fd, const char __user *buf, size_t count)

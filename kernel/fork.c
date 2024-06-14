@@ -2643,40 +2643,18 @@ pid_t kernel_clone(struct kernel_clone_args *args)
 	unsigned long task_shared_virt, task_singal_stack_virt = 0;
 	if (current->is_shelter) {
 		printk(KERN_INFO "\n[pid %d]kernel_clone in fork.c, now allocate task_shared_virt & task_singal_stack_virt\n", current->pid);
-		struct file *file = fget(current->fd_cma);
-		if (file) {
+		struct fd f = fdget(current->fd_cma);
+		if (f.file && S_ISCHR(f.file->f_inode->i_mode)) {
 			printk(KERN_INFO "before allocating task_shared_virt & task_singal_stack_virt:\n");
-			printk(KERN_INFO "current->fd_cma:%d, filename:%s\n", current->fd_cma, file->f_path.dentry->d_name.name);
-			if(strncmp(file->f_path.dentry->d_name.name, "SHELTER", 7)) {
-				printk(KERN_ERR "current->fd_cma has been changed\n");
-				// file = filp_open("/dev/SHELTER", O_RDWR, 0);
-				// if (IS_ERR(file)) {
-				// 	printk(KERN_ERR "Cannot open file %s, error: %ld\n", "/dev/SHELTER", PTR_ERR(file));
-				// 	return PTR_ERR(file);
-				// }
-				// // Allocate a file descriptor
-				// int fd_cma = get_unused_fd_flags(O_RDWR);
-				// if (fd_cma < 0) {
-				// 	printk(KERN_ERR "Cannot get unused file descriptor, error: %d\n", fd_cma);
-				// 	filp_close(file, NULL);
-				// 	return fd_cma;
-				// }
-				// // Associate the file descriptor with the file pointer
-				// fd_install(fd_cma, file);
-				// printk(KERN_INFO "open fd_cma:%d before ksys_mmap_pgoff\n", fd_cma);
-				// current->fd_cma = fd_cma;
-				// // /*disable close_on_exec*/
-				// // int flags = fcntl(fd_cma, F_GETFD);
-				// // flags &= ~FD_CLOEXEC;
-				// // fcntl(fd_cma, F_SETFD, flags);
-				// file = fget(current->fd_cma);
-				// printk(KERN_INFO "now current->fd_cma filename: %s\n", file->f_path.dentry->d_name.name);
-				// printk(KERN_INFO "current->fd_cma file->f_mode & FMODE_WRITE: %d\n", file->f_mode & FMODE_WRITE);
+			printk(KERN_INFO "current->fd_cma:%d, filename:%s\n", current->fd_cma, f.file->f_path.dentry->d_name.name);
+			if(strncmp(f.file->f_path.dentry->d_name.name, "SHELTER", 7)) {
+				panic("current->fd_cma has been changed\n");
 			}
 		}
-		//assign a share buffer for later syscall support 64kb
+		fdput(f);
+		// assign a share buffer for later syscall support 64kb
 		task_shared_virt = ksys_mmap_pgoff(0, SHELTER_TASK_SHARED_LENGTH, PROT_READ | PROT_WRITE, MAP_SHARED, current->fd_cma, 0);
-		//assign a signal_stack buffer for later signal handling support, a page
+		// assign a signal_stack buffer for later signal handling support, a page
 		task_singal_stack_virt = ksys_mmap_pgoff(0, SHELTER_TASK_SIGNAL_STACK_LENGTH, PROT_READ | PROT_WRITE, MAP_SHARED, current->fd_cma, 0);
 		printk(KERN_INFO "after ksys_mmap_pgoff, task_shared_virt:0x%lx, task_singal_stack_virt:0x%lx\n", task_shared_virt, task_singal_stack_virt);
 	}
@@ -2750,23 +2728,17 @@ pid_t kernel_clone(struct kernel_clone_args *args)
 		task_unlock(p);
 	}
 
-	//shelter_clone
+	// shelter_clone
 	if (current->is_shelter) {
-        printk(KERN_INFO "kernel_clone in fork.c: now SMC to clone & \n");
-        p->is_shelter = 1;
-        p->close_shelter = 0;
-        p->gpt_id = current->gpt_id;
-        p->fd_cma = current->fd_cma;
-        struct file *file = fget(current->fd_cma);
-        if (file && strncmp(file->f_path.dentry->d_name.name, "SHELTER", 7)) {
-            printk(KERN_INFO "before SMC to clone:\n");
-            printk(KERN_INFO "current->fd_cma:%d, filename:%s\n", current->fd_cma, file->f_path.dentry->d_name.name);
-            printk(KERN_INFO "current->fd_cma file->f_mode & FMODE_WRITE: %d\n", file->f_mode & FMODE_WRITE);
-        }
-        p->is_created = current->is_created;
-        p->finish_do_anonymous_page = current->finish_do_anonymous_page;
-        struct arm_smccc_res smccc_res;
-        //thread
+		printk(KERN_INFO "kernel_clone in fork.c: now SMC to clone & \n");
+		p->is_shelter = 1;
+		p->close_shelter = 0;
+		p->gpt_id = current->gpt_id;
+		p->fd_cma = current->fd_cma;
+		p->is_created = current->is_created;
+		p->finish_do_anonymous_page = current->finish_do_anonymous_page;
+		struct arm_smccc_res smccc_res;
+		// thread
 		if (clone_flags & CLONE_VM) { 
 			printk(KERN_INFO "thread in kernel_fork, current pid:%d, child pid:%d\n", current->pid, p->pid);
 			p->task_signal_stack_virt = task_singal_stack_virt;
@@ -2775,7 +2747,7 @@ pid_t kernel_clone(struct kernel_clone_args *args)
 			//enc_nc_ns
 			arm_smccc_smc(0x80000FFD, p->pid, task_shared_virt, task_singal_stack_virt, 0, 0, 0, 0, &smccc_res);
 		}
-		//fork
+		// fork
 		else {
 			printk(KERN_INFO "current pid %d fork in kernel_clone, child pid:%d\n", current->pid, p->pid);
 			p->task_signal_stack_virt = task_singal_stack_virt;

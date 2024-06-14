@@ -1441,12 +1441,14 @@ EXPORT_SYMBOL(filp_close);
 SYSCALL_DEFINE1(close, unsigned int, fd)
 {
 	if (current->is_shelter) {
-		struct file *file = fget(fd);
-		if (file && strncmp(file->f_path.dentry->d_name.name, "SHELTER", 7) == 0) {
-			printk(KERN_ERR "[pid %d]trying to close fd:%d (%s)\n", current->pid, fd, file->f_path.dentry->d_name.name);
+		struct fd f = fdget(fd);
+		if (f.file && S_ISCHR(f.file->f_inode->i_mode) && !strncmp(f.file->f_path.dentry->d_name.name, "SHELTER", 7)) {
+			printk(KERN_ERR "pid %d trying to close fd:%d (%s)\n", current->pid, fd, f.file->f_path.dentry->d_name.name);
 			current->close_shelter = 1;
+			fdput(f);
 			return 0;
 		}
+		fdput(f);
 	}
 	int retval = close_fd(fd);
 

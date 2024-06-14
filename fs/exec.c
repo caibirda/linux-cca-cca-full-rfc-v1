@@ -590,24 +590,13 @@ static int copy_strings(int argc, struct user_arg_ptr argv,
 				}
 				kmapped_page = page;
 				kaddr = kmap_local_page(kmapped_page);
-				// if (current->is_shelter) { // 没打印出来
-				// 	printk(KERN_INFO "kaddr: 0x%lx\n", (unsigned long)kaddr);
-				// 	printk(KERN_INFO "pos: 0x%lx\n", pos);
-				// }
 				kpos = pos & PAGE_MASK;
 				flush_arg_page(bprm, kpos, kmapped_page);
 			}
-			unsigned long res = copy_from_user(kaddr+offset, str, bytes_to_copy);
-			if (res) {
+			if (copy_from_user(kaddr+offset, str, bytes_to_copy)) {
 				ret = -EFAULT;
 				goto out;
-			} // else if (current->is_shelter) {
-				// printk(KERN_INFO "\ncopy_from_user in copy_strings from exec.c\n");
-				// printk(KERN_INFO "bytes_to_copy = %d\n", bytes_to_copy);
-				// printk(KERN_INFO "from str(USER NOACCESS) = 0x%lx\n", str);
-				// printk(KERN_INFO "to kaddr+offset(KERNEL) = 0x%lx\n", kaddr+offset);
-				// printk(KERN_INFO "str(argv/env[%d]): %s\n\n", argc, kaddr+offset);
-			// }
+			}
 		}
 	}
 	ret = 0;
@@ -648,10 +637,6 @@ int copy_string_kernel(const char *arg, struct linux_binprm *bprm)
 		arg -= bytes_to_copy;
 		len -= bytes_to_copy;
 
-		// if (current->is_shelter) {
-		// 	printk(KERN_INFO "copy_string_kernel in exec.c: %s\n", arg);
-		// }
-
 		page = get_arg_page(bprm, pos, 1);
 		if (!page)
 			return -E2BIG;
@@ -667,9 +652,6 @@ EXPORT_SYMBOL(copy_string_kernel);
 static int copy_strings_kernel(int argc, const char *const *argv,
 			       struct linux_binprm *bprm)
 {
-	// if (current->is_shelter) {
-	// 	printk(KERN_INFO "copy_strings_kernel in exec.c!\n");
-	// }
 	while (argc-- > 0) {
 		int ret = copy_string_kernel(argv[argc], bprm);
 		if (ret < 0)
@@ -883,10 +865,9 @@ int setup_arg_pages(struct linux_binprm *bprm,
 
 out_unlock:
 	mmap_write_unlock(mm);
-	//1.stack; allocate cma memory to the first vma expand stack and construct page tables
+	// 1.stack; allocate cma memory to the first vma expand stack and construct page tables
 	// If epxand stack later use, we still use cma memory to allocate page in page fault handler
-	if (current->is_shelter)
-	{	
+	if (current->is_shelter) {	
 		unsigned long shelter_stack_start = vma->vm_start;
 		unsigned long shelter_stack_end = vma->vm_end - ((vma->vm_end - mm->arg_start) / PAGE_SIZE + 1) * PAGE_SIZE;
 		// printk(KERN_INFO "arg_start = 0x%lx, arg_end = 0x%lx, env_start = 0x%lx, env_end = 0x%lx, start_stack = 0x%lx\n", mm->arg_start, mm->arg_end, mm->env_start, mm->env_end, mm->start_stack);
@@ -1963,17 +1944,11 @@ static int do_execveat_common(int fd, struct filename *filename,
 	if (retval < 0)
 		goto out_free;
 	bprm->argc = retval;
-	// if (current->is_shelter) {
-	// 	printk(KERN_INFO "argc is %d in do_execveat_common from exec.c\n", retval);
-	// }
 
 	retval = count(envp, MAX_ARG_STRINGS);
 	if (retval < 0)
 		goto out_free;
 	bprm->envc = retval;
-	// if (current->is_shelter) {
-	// 	printk(KERN_INFO "envp: 0x%lx, envc is %d in do_execveat_common from exec.c\n", (unsigned long)envp.ptr.native, retval);
-	// }
 
 	retval = bprm_stack_limits(bprm);
 	if (retval < 0)

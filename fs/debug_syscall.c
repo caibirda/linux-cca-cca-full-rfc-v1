@@ -48,17 +48,16 @@
 #include <linux/syscalls.h>
 #include <linux/mman.h>
 
-SYSCALL_DEFINE4(shelter_exec,
-        int, fd_cma,
+SYSCALL_DEFINE3(debug_exec,
 		const char __user *, filename,
 		const char __user *const __user *, argv,
 		const char __user *const __user *, envp)
 {   
-    printk(KERN_INFO "syscall shelter_exec in shelter_syscall.c\n");
+    printk(KERN_INFO "syscall debug_exec in debug_syscall.c\n");
     // printk(KERN_INFO "argv addr: 0x%lx, envp addr: 0x%lx\n", (unsigned long)argv, (unsigned long)envp);
-    current->is_shelter = 1;
-    current->is_debug = 0;
+    current->is_shelter = 0;
+    current->is_debug = 1;
     current->close_shelter = 0;
-    current->fd_cma = fd_cma;
+    current->fd_cma = 0;
 	return do_execve(getname(filename), argv, envp);
 }

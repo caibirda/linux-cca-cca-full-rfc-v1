@@ -116,6 +116,8 @@
 	.endm
 
 enclave_ventry_sync:
+	str 	x0, [sp, #16 *2]
+	stp		x13, x14, [sp, #16 * 10]
 	mov		x14, xzr
 	mov		x13, x0
 	mov     x0, #0x80000000                      
@@ -123,9 +125,13 @@ enclave_ventry_sync:
     smc     #0
 	ldr		lr, [sp, #S_LR]
 	ldp 	x28, x29, [sp, #16 * 14]
+	ldr 	x0, [sp, #16 *2]
+	ldp		x13, x14, [sp, #16 * 10]
 	b 		el0t_64_sync
 
 enclave_ventry_irq:
+	str 	x0, [sp, #16 *2]
+	stp		x13, x14, [sp, #16 * 10]
 	mov		x14, 0x80
 	mov		x13, x0
 	mov     x0, #0x80000000                      
@@ -133,9 +139,13 @@ enclave_ventry_irq:
     smc     #0
 	ldr		lr, [sp, #S_LR]
 	ldp 	x28, x29, [sp, #16 * 14]
+	ldr 	x0, [sp, #16 *2]
+	ldp		x13, x14, [sp, #16 * 10]
 	b 		el0t_64_irq
 
 enclave_ventry_fiq:
+	str 	x0, [sp, #16 *2]
+	stp		x13, x14, [sp, #16 * 10]
 	mov		x14, 0x100
 	mov		x13, x0
 	mov     x0, #0x80000000                      
@@ -143,9 +153,13 @@ enclave_ventry_fiq:
     smc     #0
 	ldr		lr, [sp, #S_LR]
 	ldp 	x28, x29, [sp, #16 * 14]
+	ldr 	x0, [sp, #16 *2]
+	ldp		x13, x14, [sp, #16 * 10]
 	b 		el0t_64_fiq
 
 enclave_ventry_error:
+	str 	x0, [sp, #16 *2]
+	stp		x13, x14, [sp, #16 * 10]
 	mov		x14, 0x180
 	mov		x13, x0
 	mov     x0, #0x80000000                      
@@ -153,6 +167,8 @@ enclave_ventry_error:
     smc     #0
 	ldr		lr, [sp, #S_LR]
 	ldp 	x28, x29, [sp, #16 * 14]
+	ldr 	x0, [sp, #16 *2]
+	ldp		x13, x14, [sp, #16 * 10]
 	b 		el0t_64_error
 	
 	.macro tramp_alias, dst, sym, tmp

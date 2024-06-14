@@ -889,8 +889,11 @@ __SYSCALL(__NR_set_mempolicy_home_node, sys_set_mempolicy_home_node)
 #define __NR_shelter_exec 451
 __SYSCALL(__NR_shelter_exec, sys_shelter_exec)
 
+#define __NR_debug_exec 452
+__SYSCALL(__NR_debug_exec, sys_debug_exec)
+
 #undef __NR_syscalls
-#define __NR_syscalls 452
+#define __NR_syscalls 453
 
 /*
  * 32 bit systems traditionally used different

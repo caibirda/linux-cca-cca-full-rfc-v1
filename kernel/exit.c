@@ -916,9 +916,8 @@ void __noreturn do_exit(long code)
 	exit_rcu();
 	exit_tasks_rcu_finish();
 
-	//shelter_task_exit
-	if(tsk->is_shelter)
-	{
+	// shelter_task_exit
+	if (tsk->is_shelter) {
 		// dump_stack();
 		struct pt_regs *task_regs = task_pt_regs(get_current());
 		printk(KERN_INFO "pid %d exit 1: do_exit, pc=0x%llx, sp=0x%llx\n", current->pid, task_regs->pc, task_regs->sp);
@@ -1019,8 +1018,7 @@ do_group_exit(int exit_code)
 		spin_unlock_irq(&sighand->siglock);
 	}
 	
-	if(current->is_shelter)
-	{
+	if (current->is_shelter) {
 		// dump_stack();
 		struct pt_regs *task_regs = task_pt_regs(get_current());
 		printk(KERN_INFO "pid %d exit 2: do_group_exit, pc=0x%llx, sp=0x%llx\n", current->pid, task_regs->pc, task_regs->sp);
