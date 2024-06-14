@@ -397,4 +397,9 @@ config SHELTER_SYSCALL
 	help
 		Shelter syscall entry.
 
+config DEBUG_SYSCALL
+bool "DEBUG syscall support"
+help
+	DEBUG syscall entry.
+
 endmenu
