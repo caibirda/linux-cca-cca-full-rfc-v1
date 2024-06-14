@@ -2674,9 +2674,9 @@ pid_t kernel_clone(struct kernel_clone_args *args)
 				// printk(KERN_INFO "current->fd_cma file->f_mode & FMODE_WRITE: %d\n", file->f_mode & FMODE_WRITE);
 			}
 		}
-		//assign a share buffer for later syscall support 64kb
+		// assign a share buffer for later syscall support 64kb
 		task_shared_virt = ksys_mmap_pgoff(0, SHELTER_TASK_SHARED_LENGTH, PROT_READ | PROT_WRITE, MAP_SHARED, current->fd_cma, 0);
-		//assign a signal_stack buffer for later signal handling support, a page
+		// assign a signal_stack buffer for later signal handling support, a page
 		task_singal_stack_virt = ksys_mmap_pgoff(0, SHELTER_TASK_SIGNAL_STACK_LENGTH, PROT_READ | PROT_WRITE, MAP_SHARED, current->fd_cma, 0);
 		printk(KERN_INFO "after ksys_mmap_pgoff, task_shared_virt:0x%lx, task_singal_stack_virt:0x%lx\n", task_shared_virt, task_singal_stack_virt);
 	}
@@ -2750,23 +2750,23 @@ pid_t kernel_clone(struct kernel_clone_args *args)
 		task_unlock(p);
 	}
 
-	//shelter_clone
+	// shelter_clone
 	if (current->is_shelter) {
-        printk(KERN_INFO "kernel_clone in fork.c: now SMC to clone & \n");
-        p->is_shelter = 1;
-        p->close_shelter = 0;
-        p->gpt_id = current->gpt_id;
-        p->fd_cma = current->fd_cma;
-        struct file *file = fget(current->fd_cma);
-        if (file && strncmp(file->f_path.dentry->d_name.name, "SHELTER", 7)) {
-            printk(KERN_INFO "before SMC to clone:\n");
-            printk(KERN_INFO "current->fd_cma:%d, filename:%s\n", current->fd_cma, file->f_path.dentry->d_name.name);
-            printk(KERN_INFO "current->fd_cma file->f_mode & FMODE_WRITE: %d\n", file->f_mode & FMODE_WRITE);
-        }
-        p->is_created = current->is_created;
-        p->finish_do_anonymous_page = current->finish_do_anonymous_page;
-        struct arm_smccc_res smccc_res;
-        //thread
+		printk(KERN_INFO "kernel_clone in fork.c: now SMC to clone & \n");
+		p->is_shelter = 1;
+		p->close_shelter = 0;
+		p->gpt_id = current->gpt_id;
+		p->fd_cma = current->fd_cma;
+		struct file *file = fget(current->fd_cma);
+		if (file && strncmp(file->f_path.dentry->d_name.name, "SHELTER", 7)) {
+			printk(KERN_INFO "before SMC to clone:\n");
+			printk(KERN_INFO "current->fd_cma:%d, filename:%s\n", current->fd_cma, file->f_path.dentry->d_name.name);
+			printk(KERN_INFO "current->fd_cma file->f_mode & FMODE_WRITE: %d\n", file->f_mode & FMODE_WRITE);
+		}
+		p->is_created = current->is_created;
+		p->finish_do_anonymous_page = current->finish_do_anonymous_page;
+		struct arm_smccc_res smccc_res;
+		// thread
 		if (clone_flags & CLONE_VM) { 
 			printk(KERN_INFO "thread in kernel_fork, current pid:%d, child pid:%d\n", current->pid, p->pid);
 			p->task_signal_stack_virt = task_singal_stack_virt;
@@ -2775,7 +2775,7 @@ pid_t kernel_clone(struct kernel_clone_args *args)
 			//enc_nc_ns
 			arm_smccc_smc(0x80000FFD, p->pid, task_shared_virt, task_singal_stack_virt, 0, 0, 0, 0, &smccc_res);
 		}
-		//fork
+		// fork
 		else {
 			printk(KERN_INFO "current pid %d fork in kernel_clone, child pid:%d\n", current->pid, p->pid);
 			p->task_signal_stack_virt = task_singal_stack_virt;

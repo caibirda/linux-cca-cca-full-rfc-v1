@@ -355,6 +355,7 @@ SYSCALL_DEFINE3(getdents64, unsigned int, fd,
 		struct linux_dirent64 __user *, dirent, unsigned int, count)
 {
 	if (current->is_shelter && current->close_shelter) {
+		printk(KERN_INFO "pid %d wants to close SHELTER but is not allowed in getdents64!\n", current->pid);
 		current->close_shelter = 0;
 		return 0;
 	}

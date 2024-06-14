@@ -51,8 +51,8 @@ SYSCALL_DEFINE6(mmap, unsigned long, addr, unsigned long, len,
 				printk(KERN_INFO "no need to read file!\n");
 			}
 			printk(KERN_INFO "shm_file_mmap %s addr:0x%lx, len:0x%lx, end:0x%lx\n", filep->f_path.dentry->d_iname, res, len, res + len);
-			struct arm_smccc_res smccc_res;
-			arm_smccc_smc(0x80000FF3, res, current->pid, 0, 0, 0, 0, 0, &smccc_res);
+			// struct arm_smccc_res smccc_res;
+			// arm_smccc_smc(0x80000FF3, res, current->pid, 0, 0, 0, 0, 0, &smccc_res);
 		} else { // PRIVATE | SHARED_ANONYMOUS
 			res = ksys_mmap_pgoff(addr, len, prot, (addr ? MAP_FIXED : 0) | flags | MAP_LOCKED, current->fd_cma, off >> PAGE_SHIFT);
 			if (!(flags & MAP_ANONYMOUS)) { // Not MAP_ANONYMOUS
@@ -60,8 +60,8 @@ SYSCALL_DEFINE6(mmap, unsigned long, addr, unsigned long, len,
 				loff_t file_pos = off;
 				vfs_read(filep, (void *)res, len, &file_pos);
 				printk(KERN_INFO "mmap %s addr:0x%lx, len:0x%lx, end:0x%lx\n", filep->f_path.dentry->d_iname, res, len, res + len);
-				struct arm_smccc_res smccc_res;
-				arm_smccc_smc(0x80000FF3, res, current->pid, 0, 0, 0, 0, 0, &smccc_res);
+				// struct arm_smccc_res smccc_res;
+				// arm_smccc_smc(0x80000FF3, res, current->pid, 0, 0, 0, 0, 0, &smccc_res);
 			} else { // MAP_ANONYMOUS
 				printk(KERN_INFO "MAP_ANONYMOUS addr:0x%lx, len:0x%lx, end:0x%lx\n", res, len, res + len);
 			}

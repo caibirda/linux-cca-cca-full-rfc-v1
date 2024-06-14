@@ -753,6 +753,7 @@ struct task_struct {
 
 	//shelter structure
 	int is_shelter;
+	int is_debug;
 	int close_shelter;
 	int fd_cma;
 	unsigned int gpt_id;
