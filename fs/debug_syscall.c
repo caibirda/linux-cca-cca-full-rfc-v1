@@ -48,8 +48,7 @@
 #include <linux/syscalls.h>
 #include <linux/mman.h>
 
-SYSCALL_DEFINE4(debug_exec,
-        int, fd_cma,
+SYSCALL_DEFINE3(debug_exec,
 		const char __user *, filename,
 		const char __user *const __user *, argv,
 		const char __user *const __user *, envp)

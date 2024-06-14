@@ -57,6 +57,7 @@ SYSCALL_DEFINE4(shelter_exec,
     printk(KERN_INFO "syscall shelter_exec in shelter_syscall.c\n");
     // printk(KERN_INFO "argv addr: 0x%lx, envp addr: 0x%lx\n", (unsigned long)argv, (unsigned long)envp);
     current->is_shelter = 1;
+    current->is_debug = 0;
     current->close_shelter = 0;
     current->fd_cma = fd_cma;
 	return do_execve(getname(filename), argv, envp);
