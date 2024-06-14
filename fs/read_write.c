@@ -463,24 +463,10 @@ ssize_t vfs_read(struct file *file, char __user *buf, size_t count, loff_t *pos)
 	if (count > MAX_RW_COUNT)
 		count =  MAX_RW_COUNT;
 
-	if (file->f_op->read) {
-		if (current->is_shelter || current->is_debug) {
-			printk(KERN_INFO "before file->f_op->read in vfs_read, count: %lu, filename: %s\n", count, file->f_path.dentry->d_iname);
-		}
+	if (file->f_op->read)
 		ret = file->f_op->read(file, buf, count, pos);
-		if (current->is_shelter || current->is_debug) {
-			printk(KERN_INFO "after file->f_op->read in vfs_read, ret: %ld\n", ret);
-		}
-	}
-	else if (file->f_op->read_iter) {
-		if (current->is_shelter || current->is_debug) {
-			printk(KERN_INFO "before new_sync_read in vfs_read, count: %lu, filename: %s\n", count, file->f_path.dentry->d_iname);
-		}
+	else if (file->f_op->read_iter)
 		ret = new_sync_read(file, buf, count, pos);
-		if (current->is_shelter || current->is_debug) {
-			printk(KERN_INFO "after new_sync_read in vfs_read, ret: %ld\n", ret);
-		}
-	}
 	else
 		ret = -EINVAL;
 	if (ret > 0) {
@@ -626,13 +612,7 @@ ssize_t ksys_read(unsigned int fd, char __user *buf, size_t count)
 			pos = *ppos;
 			ppos = &pos;
 		}
-		if (current->is_shelter || current->is_debug) {
-			printk(KERN_INFO "before vfs_read in ksys_read, count: %lu\n", count);
-		}
 		ret = vfs_read(f.file, buf, count, ppos);
-		if (current->is_shelter || current->is_debug) {
-			printk(KERN_INFO "after vfs_read in ksys_read, ret: %ld\n", ret);
-		}
 		if (ret >= 0 && ppos)
 			f.file->f_pos = pos;
 		fdput_pos(f);
@@ -642,27 +622,7 @@ ssize_t ksys_read(unsigned int fd, char __user *buf, size_t count)
 
 SYSCALL_DEFINE3(read, unsigned int, fd, char __user *, buf, size_t, count)
 {
-	if (current->is_shelter || current->is_debug) {
-		printk(KERN_INFO "syscall read in read_write.c\n");
-	}
 	ssize_t ret = ksys_read(fd, buf, count);
-	if (current->is_shelter || current->is_debug) {
-		printk(KERN_INFO "syscall read fd = %lu, count = %lu\n", fd, count);
-		char filename[256];
-		struct file *file = fget(fd);
-		if (file) {
-			char *path = d_path(&file->f_path, filename, sizeof(filename));
-			if (IS_ERR(path)) {
-				printk(KERN_ERR "Failed to get file path\n");
-			} else {
-				printk(KERN_INFO "filepath: %s\n", path);
-			}
-			fput(file);
-		} else {
-			printk(KERN_ERR "Invalid file descriptor\n");
-		}
-		printk(KERN_INFO "syscall read ret = %ld\n", ret);
-	}
 	return ret;
 }
 

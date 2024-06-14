@@ -169,9 +169,6 @@ static int do_brk_flags(struct ma_state *mas, struct vm_area_struct *brkvma,
 		unsigned long addr, unsigned long request, unsigned long flags);
 SYSCALL_DEFINE1(brk, unsigned long, brk)
 {
-	// if (current->is_shelter) {
-	// 	printk(KERN_INFO "\nsyscall brk in mmap.c\n");
-	// }
 	unsigned long newbrk, oldbrk, origbrk;
 	struct mm_struct *mm = current->mm;
 	struct vm_area_struct *brkvma, *next = NULL;
@@ -185,9 +182,6 @@ SYSCALL_DEFINE1(brk, unsigned long, brk)
 		return -EINTR;
 
 	origbrk = mm->brk;
-	// if (current->is_shelter) {
-	// 	printk(KERN_INFO "origbrk = 0x%lx\n", origbrk);
-	// }
 
 #ifdef CONFIG_COMPAT_BRK
 	/*
@@ -279,16 +273,10 @@ success:
 	userfaultfd_unmap_complete(mm, &uf);
 	if (populate)
 		mm_populate(oldbrk, newbrk - oldbrk);
-	// if (current->is_shelter) {
-	// 	printk(KERN_INFO "ret from syscall brk in mmap.c, brk: 0x%lx\n\n", mm->brk);
-	// }
 	return brk;
 
 out:
 	mmap_write_unlock(mm);
-	// if(current->is_shelter) {
-	// 	printk(KERN_INFO "ret from syscall brk in mmap.c, brk: 0x%lx\n\n", mm->brk);
-	// }
 	return origbrk;
 }
 

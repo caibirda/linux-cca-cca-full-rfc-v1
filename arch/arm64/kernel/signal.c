@@ -881,8 +881,7 @@ static int get_sigframe(struct rt_sigframe_user_layout *user,
 	if (err)
 		return err;
 
-	if (current->is_shelter)
-	{
+	if (current->is_shelter) {
 		sp = sp_top = current->task_signal_stack_virt + SHELTER_TASK_SIGNAL_STACK_LENGTH;
 		printk("shelter output signal.c\n");
 	} else
@@ -1054,18 +1053,11 @@ static void do_signal(struct pt_regs *regs)
 		continue_addr = regs->pc;
 		restart_addr = continue_addr - (compat_thumb_mode(regs) ? 2 : 4);
 		retval = regs->regs[0];
-		// if (current->is_shelter && syscallno == 0x38) {
-		// 	printk(KERN_INFO "do_signal for syscall: restart_addr:0x%lx, retval:0x%lx\n", restart_addr, retval);
-		// 	printk(KERN_INFO "before forget_syscall sp=0x%lx, pc=0x%lx, syscallno=0x%lx, x0=0x%lx, x1=0x%lx, x2=0x%lx\n", regs->sp, regs->pc, regs->syscallno, regs->regs[0], regs->regs[1], regs->regs[2]);
-		// }
 
 		/*
 		 * Avoid additional syscall restarting via ret_to_user.
 		 */
 		forget_syscall(regs);
-		// if (current->is_shelter && syscallno == 0x38) {
-		// 	printk(KERN_INFO "after forget_syscall, sp=0x%lx, pc=0x%lx, syscallno=0x%lx, x0=0x%lx, x1=0x%lx, x2=0x%lx\n", regs->sp, regs->pc, regs->syscallno, regs->regs[0], regs->regs[1], regs->regs[2]);
-		// }
 
 		/*
 		 * Prepare for system call restart. We do this here so that a
@@ -1087,9 +1079,6 @@ static void do_signal(struct pt_regs *regs)
 	 * the debugger may change all of our registers.
 	 */
 	if (get_signal(&ksig)) {
-		// if (current->is_shelter && syscallno == 0x38) {
-		// 	printk(KERN_INFO "do_signal for get_signal & handle_signal\n");
-		// }
 		/*
 		 * Depending on the signal settings, we may need to revert the
 		 * decision to restart the system call, but skip this if a
@@ -1113,17 +1102,11 @@ static void do_signal(struct pt_regs *regs)
 	 * has chosen to restart at a different PC, ignore the restart.
 	 */
 	if (syscall && regs->pc == restart_addr) {
-		// if (current->is_shelter && syscallno == 0x38) {
-		// 	printk(KERN_INFO "do_signal for restarting a different system call\n");
-		// }
 		if (retval == -ERESTART_RESTARTBLOCK)
 			setup_restart_syscall(regs);
 		user_rewind_single_step(current);
 	}
 
-	// if (current->is_shelter && syscallno == 0x38) {
-	// 	printk(KERN_INFO "now restore_saved_sigmask in do_signal\n");
-	// }
 	restore_saved_sigmask();
 }
 
