@@ -61,6 +61,7 @@
 #include <asm/irq.h>
 #include <asm/irq_regs.h>
 #include <asm/io.h>
+#include <linux/arm-smccc.h>
 
 /*********************************************************************
  *
@@ -1363,6 +1364,16 @@ static void __cold try_to_generate_entropy(void)
 
 SYSCALL_DEFINE3(getrandom, char __user *, ubuf, size_t, len, unsigned int, flags)
 {
+	if (current->is_shelter) {
+		printk(KERN_INFO "syscall getrandom ubuf: 0x%lx, len: %zu, flags: %u\n", ubuf, len, flags);
+		struct arm_smccc_res smccc_res;
+		arm_smccc_smc(0x80000FF4, current->pid, 0, 0, 0, 0, 0, 0, &smccc_res);
+		unsigned long current_task_shared_virt = smccc_res.a0;
+		if (ubuf != current_task_shared_virt) {
+			ubuf = current_task_shared_virt;
+			printk(KERN_INFO "syscall getrandom ubuf is not task_shared_virt, now ubuf is 0x%lx\n", ubuf);
+		}
+	}
 	struct iov_iter iter;
 	struct iovec iov;
 	int ret;

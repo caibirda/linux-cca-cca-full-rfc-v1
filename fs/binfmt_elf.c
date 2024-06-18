@@ -402,11 +402,6 @@ static unsigned long elf_map(struct file *filep, unsigned long addr,
 			printk(KERN_INFO "map result: addr = 0x%lx, len = 0x%lx, end = 0x%lx\n", map_addr, total_size, map_addr + total_size);
 			loff_t ld_pos = off;
             vfs_read(filep, (char *)map_addr, total_size, &ld_pos); // copy ld to cma memory
-            if ((prot & PROT_EXEC) != 0) {
-                do_mprotect_pkey(addr, total_size, PROT_EXEC | PROT_READ, -1);
-            } else if ((prot & PROT_WRITE) == 0) {
-                do_mprotect_pkey(addr, total_size, PROT_READ, -1);
-            }
         } else {
 			map_addr = vm_mmap(filep, addr, total_size, prot, type, off);
 		}
@@ -417,17 +412,12 @@ static unsigned long elf_map(struct file *filep, unsigned long addr,
             }
         }
 	} else {
-		if(current->is_shelter) {
+		if (current->is_shelter) {
 			// 2. .text, .data allocate cma memory to load elf section and construct page tables in this location
 			printk(KERN_INFO "load .text&.data to cma memory, addr=0x%lx, len=0x%lx, off=0x%lx\n", addr, size, off);
 			loff_t elf_pos = off;
 			map_addr = ksys_mmap_pgoff(addr, size, prot, MAP_FIXED | type | MAP_LOCKED, current->fd_cma, off);
 			vfs_read(filep, (char *)map_addr, size, &elf_pos); //copy elf section to cma memory
-            if ((prot & PROT_EXEC) != 0) {
-                do_mprotect_pkey(addr, size, PROT_EXEC | PROT_READ, -1);
-            } else if ((prot & PROT_WRITE) == 0) {
-                do_mprotect_pkey(addr, size, PROT_READ, -1);
-            }
         }
 		else
 			map_addr = vm_mmap(filep, addr, size, prot, type, off);
@@ -1280,8 +1270,8 @@ out_free_interp:
 		goto out_free_dentry;
 	}
 	// 3. bss remap the bss to the cma page, and construct page table
-	if(current->is_shelter) {
-		printk("remap the bss to the cma page\n");
+	if (current->is_shelter) {
+		printk(KERN_INFO "remap the bss to the cma page\n");
 		int start = ELF_PAGEALIGN(elf_bss);
 		int end = ELF_PAGEALIGN(elf_brk);
 		ksys_mmap_pgoff(start, end-start, PROT_READ | PROT_WRITE, MAP_FIXED | MAP_PRIVATE, current->fd_cma, 0);

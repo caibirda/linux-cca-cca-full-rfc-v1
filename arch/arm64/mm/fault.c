@@ -631,7 +631,7 @@ retry:
 	}
 	mmap_read_unlock(mm);
 
-	// if(current->is_shelter && current->is_created && current->finish_do_anonymous_page)
+	// if(current->is_shelter && current->finish_do_anonymous_page)
 	// {
 	// 	printk(KERN_INFO "SApp handle page fault in fault.c, addr: 0x%lx\n", addr);
 	// 	struct arm_smccc_res smccc_res;

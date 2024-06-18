@@ -655,14 +655,14 @@ asmlinkage void noinstr el0t_64_sync_handler(struct pt_regs *regs)
 	unsigned long esr = read_sysreg(esr_el1);
 	unsigned long sysno = regs->regs[8];
 	int gpt_id;
-	// if (current->is_shelter) {
-	// 	printk(KERN_INFO "\nel0t_64_sync_handler sysno = %lu, esr = 0x%lx, pc = 0x%lx\n", sysno, esr, regs->pc);
+	// if (current->is_shelter || current->is_debug) {
+	// 	printk(KERN_INFO "\nel0t_64_sync_handler sysno: %lu, esr: 0x%lx, pc: 0x%lx\n", sysno, esr, regs->pc);
 	// }
 
 	switch (ESR_ELx_EC(esr)) {
 	case ESR_ELx_EC_SVC64:
-		// if (current->is_shelter) {
-		// 	printk(KERN_INFO "el0_svc in el0t_64_sync_handler: sysno = %lu\n", sysno);
+		// if (current->is_shelter || current->is_debug) {
+		// 	printk(KERN_INFO "el0_svc in el0t_64_sync_handler sysno: %lu\n", sysno);
 		// }
 		el0_svc(regs);
         if (sysno == __NR_shelter_exec && current->is_shelter) {
@@ -675,13 +675,12 @@ asmlinkage void noinstr el0t_64_sync_handler(struct pt_regs *regs)
                 do_group_exit(gpt_id);
             }
             current->gpt_id = gpt_id;
-            current->is_created = 1;
             current->close_shelter = 0;
             struct arm_smccc_res smccc_res;
             unsigned long task_shared_virt = ksys_mmap_pgoff(0, SHELTER_TASK_SHARED_LENGTH, PROT_READ | PROT_WRITE, MAP_SHARED, current->fd_cma, 0);
             unsigned long task_singal_stack_virt = ksys_mmap_pgoff(0, SHELTER_TASK_SIGNAL_STACK_LENGTH, PROT_READ | PROT_WRITE, MAP_SHARED, current->fd_cma, 0);
-            current->task_signal_stack_virt = task_singal_stack_virt;
-            // printk("tid:%d, shelter shared addr:%lx, singal_stack addr:%lx\n", current->pid, task_shared_virt, task_singal_stack_virt);
+			current->task_signal_stack_virt = task_singal_stack_virt;
+            printk("pid %d task_shared_virt: 0x%lx, task_singal_stack_virt: 0x%lx\n", current->pid, task_shared_virt, task_singal_stack_virt);
 			// enc_nc_ns
             arm_smccc_smc(0x80000FFD, current->pid, task_shared_virt, task_singal_stack_virt, 0, 0, 0, 0, &smccc_res);
             // printk("exit do_el0_svc\n");
