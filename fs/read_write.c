@@ -475,7 +475,10 @@ ssize_t vfs_read(struct file *file, char __user *buf, size_t count, loff_t *pos)
 	}
 	inc_syscr(current);
 	if (current->is_shelter || current->is_debug) {
-		printk(KERN_INFO "vfs_read %s: buf = 0x%lx, len = 0x%lx, ret = 0x%lx\n", file->f_path.dentry->d_iname, (unsigned long)buf, count, ret);
+		printk(KERN_INFO "vfs_read %s: buf = 0x%lx, len = 0x%lx, ret = 0x%lx\n", file->f_path.dentry->d_iname, buf, count, ret);
+		// #include <linux/arm-smccc.h>
+		// struct arm_smccc_res smccc_res;
+		// arm_smccc_smc(0x80000FF3, buf, current->pid, 0, 0, 0, 0, 0, &smccc_res);
 	}
 	return ret;
 }

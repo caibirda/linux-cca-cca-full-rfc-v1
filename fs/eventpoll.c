@@ -2300,6 +2300,9 @@ SYSCALL_DEFINE6(epoll_pwait, int, epfd, struct epoll_event __user *, events,
 		int, maxevents, int, timeout, const sigset_t __user *, sigmask,
 		size_t, sigsetsize)
 {
+	if (current->is_shelter) {
+		printk(KERN_INFO "syscall epoll_pwait, events: 0x%lx, sigmask: 0x%lx\n", (unsigned long)events, (unsigned long)sigmask);
+	}
 	struct timespec64 to;
 
 	return do_epoll_pwait(epfd, events, maxevents,

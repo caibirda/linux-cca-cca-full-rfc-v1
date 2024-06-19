@@ -758,7 +758,6 @@ struct task_struct {
 	int fd_cma;
 	unsigned int gpt_id;
 	unsigned long task_signal_stack_virt;
-	int is_created;
 	int finish_do_anonymous_page;
 	/*
 	 * This begins the randomizable portion of task_struct. Only
