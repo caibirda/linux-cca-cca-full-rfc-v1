@@ -1274,8 +1274,8 @@ out_free_interp:
 		printk(KERN_INFO "remap the bss to the cma page\n");
 		int start = ELF_PAGEALIGN(elf_bss);
 		int end = ELF_PAGEALIGN(elf_brk);
-		ksys_mmap_pgoff(start, end-start, PROT_READ | PROT_WRITE, MAP_FIXED | MAP_PRIVATE, current->fd_cma, 0);
-	}
+		ksys_mmap_pgoff(start, end - start, PROT_READ | PROT_WRITE, MAP_FIXED | MAP_PRIVATE, current->fd_cma, 0);
+    }
 
 	if (interpreter) {
 		elf_entry = load_elf_interp(interp_elf_ex,
