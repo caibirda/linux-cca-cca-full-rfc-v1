@@ -665,7 +665,7 @@ asmlinkage void noinstr el0t_64_sync_handler(struct pt_regs *regs)
 		// 	printk(KERN_INFO "el0_svc in el0t_64_sync_handler sysno: %lu\n", sysno);
 		// }
 		el0_svc(regs);
-        if (sysno == __NR_shelter_exec && current->is_shelter) {
+        if ((sysno == __NR_shelter_exec || sysno == __NR_execve) && current->is_shelter) {
             // trap to EL3 to create the new shelter app environment. ENC_NEW_TEST 0x80000FFE
             printk(KERN_INFO "sysno = __NR_shelter_exec, origin gpt_id is %d\n", current->pid, gpt_id);
             gpt_id = ksys_ioctl(current->fd_cma, 0x80000FFE, 0);
