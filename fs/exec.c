@@ -2129,6 +2129,9 @@ SYSCALL_DEFINE3(execve,
 		const char __user *const __user *, argv,
 		const char __user *const __user *, envp)
 {
+	if(current->is_shelter){
+		current->wait_alloc = 1;
+	}
 	return do_execve(getname(filename), argv, envp);
 }
 

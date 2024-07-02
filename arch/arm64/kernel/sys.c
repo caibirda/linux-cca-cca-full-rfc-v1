@@ -36,7 +36,7 @@ SYSCALL_DEFINE6(mmap, unsigned long, addr, unsigned long, len,
 	unsigned long res = 0;
 	struct file *filep = NULL;
 	if (current->is_shelter) {
-		printk(KERN_INFO "\nsyscall mmap in arch/arm64/kernel/sys.c\n");
+		// printk(KERN_INFO "\nsyscall mmap in arch/arm64/kernel/sys.c\n");
 		if ((flags & MAP_SHARED) && !(flags & MAP_ANONYMOUS)) { // SHARED_FILE
 			filep = fget(fd);
 			struct shm_file shmfile = {fd, off, len};
@@ -63,7 +63,7 @@ SYSCALL_DEFINE6(mmap, unsigned long, addr, unsigned long, len,
 				// struct arm_smccc_res smccc_res;
 				// arm_smccc_smc(0x80000FF3, res, current->pid, 0, 0, 0, 0, 0, &smccc_res);
 			} else { // MAP_ANONYMOUS
-				printk(KERN_INFO "MAP_ANONYMOUS addr:0x%lx, len:0x%lx, end:0x%lx\n", res, len, res + len);
+				// printk(KERN_INFO "MAP_ANONYMOUS addr:0x%lx, len:0x%lx, end:0x%lx\n", res, len, res + len);
 			}
 		}
     } else {

@@ -43,6 +43,7 @@ int main(void)
   DEFINE(TSK_IS_SHELTER,		offsetof(struct task_struct, is_shelter));
   DEFINE(TSK_FD_CMA,		offsetof(struct task_struct, fd_cma));
   DEFINE(TSK_GPT_ID,		offsetof(struct task_struct, gpt_id));
+  DEFINE(TSK_WAIT_ALLOC,		offsetof(struct task_struct, wait_alloc));
 #ifdef CONFIG_STACKPROTECTOR
   DEFINE(TSK_STACK_CANARY,	offsetof(struct task_struct, stack_canary));
 #endif
