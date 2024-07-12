@@ -869,20 +869,10 @@ out_unlock:
 	// If epxand stack later use, we still use cma memory to allocate page in page fault handler
 	if (current->is_shelter) {	
 		unsigned long shelter_stack_start = vma->vm_start;
-		unsigned long shelter_stack_end = vma->vm_end - ((vma->vm_end - mm->arg_start) / PAGE_SIZE + 1) * PAGE_SIZE;
-		// printk(KERN_INFO "arg_start = 0x%lx, arg_end = 0x%lx, env_start = 0x%lx, env_end = 0x%lx, start_stack = 0x%lx\n", mm->arg_start, mm->arg_end, mm->env_start, mm->env_end, mm->start_stack);
+		unsigned long shelter_stack_end = vma->vm_end - ((vma->vm_end - mm->arg_start + 0x00fff) & 0xfffff000);
 		printk(KERN_INFO "shelter_stack_start = 0x%lx, end = 0x%lx\n", shelter_stack_start, shelter_stack_end);
-		// struct arm_smccc_res smccc_res;
-		// arm_smccc_smc(0x80000FF2, shelter_stack_start, 0, 0, 0, 0, 0, 0, &smccc_res);
-		// printk(KERN_INFO "shelter_stack_start phys = 0x%lx\n", smccc_res.a0);
-		// arm_smccc_smc(0x80000FF3, mm->arg_start, current->pid, 0, 0, 0, 0, 0, &smccc_res);
 		size_t stacksize = shelter_stack_end - shelter_stack_start;
-		// printk(KERN_INFO "shelter_stack_size = 0x%lx\n", shelter_stacksize);
-		// vm_munmap(shelter_stack_start, shelter_stacksize);
 		unsigned long map_addr = ksys_mmap_pgoff(shelter_stack_start, stacksize, PROT_READ | PROT_WRITE, MAP_FIXED | MAP_PRIVATE, current->fd_cma, 0);
-		// printk(KERN_INFO "\nmap_addr va in setup_arg_pages from exec.c: 0x%lx\n", map_addr);
-		// arm_smccc_smc(0x80000FF2, map_addr, 0, 0, 0, 0, 0, 0, &smccc_res);
-		// printk(KERN_INFO "map_addr pa in setup_arg_pages from exec.c: 0x%lx\n\n", smccc_res.a0);
 	}
 	return ret;
 }

@@ -757,7 +757,10 @@ struct task_struct {
 	unsigned int close_shelter;
 	unsigned int fd_cma;
 	unsigned int gpt_id;
-	unsigned int finish_do_anonymous_page;
+	unsigned int do_anonymous_page;
+	unsigned int do_read_fault;
+	unsigned int do_cow_fault;
+	unsigned int do_shared_fault;
 	/*
 	 * This begins the randomizable portion of task_struct. Only
 	 * scheduling-critical items should be added above here.

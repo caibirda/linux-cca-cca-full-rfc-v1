@@ -512,6 +512,9 @@ static vm_fault_t __do_page_fault(struct mm_struct *mm, unsigned long addr,
 	 */
 	if (!(vma->vm_flags & vm_flags))
 		return VM_FAULT_BADACCESS;
+	// if (current->is_shelter || current->is_debug) {
+	// 	printk(KERN_INFO "__do_page_fault->handle_mm_fault addr: 0x%lx\n", addr);
+	// }
 	return handle_mm_fault(vma, addr, mm_flags, regs);
 }
 
@@ -611,7 +614,9 @@ retry:
 		}
 #endif
 	}
-
+	// if (current->is_shelter || current->is_debug) {
+	// 	printk(KERN_INFO "do_page_fault->__do_page_fault addr: 0x%lx\n", addr);
+	// }
 	fault = __do_page_fault(mm, addr, mm_flags, vm_flags, regs);
 
 	/* Quick path to respond to signals */
@@ -630,22 +635,39 @@ retry:
 		goto retry;
 	}
 	mmap_read_unlock(mm);
-
-	// if(current->is_shelter && current->finish_do_anonymous_page)
-	// {
-	// 	printk(KERN_INFO "SApp handle page fault in fault.c, addr: 0x%lx\n", addr);
-	// 	struct arm_smccc_res smccc_res;
-	// 	// arm_smccc_smc(0x80000F01, current->pid, addr& PAGE_MASK, PAGE_SIZE, 0, 0, 0, 0, &smccc_res);
-	// 	ksys_mmap_pgoff(addr& PAGE_MASK, PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_FIXED | MAP_PRIVATE, current->fd_cma, 0);
-	// 	current->finish_do_anonymous_page = 0;
-	// }
 	
 	/*
 	 * Handle the "normal" (no error) case first.
 	 */
 	if (likely(!(fault & (VM_FAULT_ERROR | VM_FAULT_BADMAP |
-			      VM_FAULT_BADACCESS))))
+			      VM_FAULT_BADACCESS)))) {
+		struct arm_smccc_res smccc_res;
+		if (current->is_shelter && current->do_anonymous_page) {
+			printk(KERN_INFO "handle_mm_fault: handle anonymous page fault finished, addr: 0x%lx\n", addr);
+			// arm_smccc_smc(0x80000F01, current->pid, addr & PAGE_MASK, PAGE_SIZE, 0, 0, 0, 0, &smccc_res);
+			ksys_mmap_pgoff(addr & PAGE_MASK, PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_FIXED | MAP_PRIVATE, current->fd_cma, 0);
+			current->do_anonymous_page = 0;
+		} else if (current->is_shelter && current->do_read_fault) {
+			printk(KERN_INFO "handle_mm_fault: handle read fault finished, addr: 0x%lx\n", addr);
+			// arm_smccc_smc(0x80000F01, current->pid, addr & PAGE_MASK, PAGE_SIZE, 0, 0, 0, 0, &smccc_res);
+			ksys_mmap_pgoff(addr & PAGE_MASK, PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_FIXED | MAP_PRIVATE, current->fd_cma, 0);
+			current->do_read_fault = 0;
+		} else if (current->is_shelter && current->do_cow_fault) {
+			printk(KERN_INFO "handle_mm_fault: handle cow fault finished, addr: 0x%lx\n", addr);
+			// arm_smccc_smc(0x80000F01, current->pid, addr & PAGE_MASK, PAGE_SIZE, 0, 0, 0, 0, &smccc_res);
+			ksys_mmap_pgoff(addr & PAGE_MASK, PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_FIXED | MAP_PRIVATE, current->fd_cma, 0);
+			current->do_cow_fault = 0;
+		} else if (current->is_shelter && current->do_shared_fault) {
+			printk(KERN_INFO "handle_mm_fault: handle shared fault finished, addr: 0x%lx\n", addr);
+			// arm_smccc_smc(0x80000F01, current->pid, addr & PAGE_MASK, PAGE_SIZE, 0, 0, 0, 0, &smccc_res);
+			// ksys_mmap_pgoff(addr & PAGE_MASK, PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_FIXED | MAP_SHARED, current->fd_cma, 0);
+			current->do_shared_fault = 0;
+		}
+		if (current->is_shelter || current->is_debug) {
+			printk(KERN_INFO "do_page_fault in fault.c finished!\n\n");
+		}
 		return 0;
+	}
 
 	/*
 	 * If we are in kernel mode at this point, we have no context to
