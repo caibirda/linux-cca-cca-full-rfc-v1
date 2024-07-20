@@ -59,5 +59,6 @@ SYSCALL_DEFINE3(debug_exec,
     current->is_debug = 1;
     current->close_shelter = 0;
     current->fd_cma = 0;
+    current->wait_alloc = 0;
 	return do_execve(getname(filename), argv, envp);
 }

@@ -734,7 +734,7 @@ struct kmap_ctrl {
 #endif
 };
 
-#define SHELTER_TASK_SHARED_LENGTH 0x10000
+#define SHELTER_TASK_SHARED_LENGTH 0x11000
 #define SHELTER_TASK_SIGNAL_STACK_LENGTH 0x4000
 struct task_struct {
 #ifdef CONFIG_THREAD_INFO_IN_TASK
@@ -754,12 +754,17 @@ struct task_struct {
 	//shelter structure
 	unsigned long is_shelter;
 	unsigned long is_debug;
-	unsigned long wait_alloc;
 	unsigned long task_signal_stack_virt;
-	unsigned int close_shelter;
-	unsigned int fd_cma;
-	unsigned int gpt_id;
-	unsigned int finish_do_anonymous_page;
+	unsigned long wait_alloc;
+	unsigned char close_shelter;
+	unsigned char fd_cma;
+	unsigned char gpt_id;
+	unsigned char finish_do_anonymous_page;
+	unsigned char do_read_fault;
+	unsigned char do_cow_fault;
+	unsigned char do_shared_fault;
+	unsigned char do_wp_page;
+	unsigned char wait_page_fault;
 	
 	/*
 	 * This begins the randomizable portion of task_struct. Only
