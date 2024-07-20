@@ -60,5 +60,6 @@ SYSCALL_DEFINE4(shelter_exec,
     current->is_debug = 0;
     current->close_shelter = 0;
     current->fd_cma = fd_cma;
+    current->wait_alloc = 0;
 	return do_execve(getname(filename), argv, envp);
 }

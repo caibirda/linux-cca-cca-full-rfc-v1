@@ -630,22 +630,46 @@ retry:
 		goto retry;
 	}
 	mmap_read_unlock(mm);
-
-	// if(current->is_shelter && current->finish_do_anonymous_page)
-	// {
-	// 	printk(KERN_INFO "SApp handle page fault in fault.c, addr: 0x%lx\n", addr);
-	// 	struct arm_smccc_res smccc_res;
-	// 	// arm_smccc_smc(0x80000F01, current->pid, addr& PAGE_MASK, PAGE_SIZE, 0, 0, 0, 0, &smccc_res);
-	// 	ksys_mmap_pgoff(addr& PAGE_MASK, PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_FIXED | MAP_PRIVATE, current->fd_cma, 0);
-	// 	current->finish_do_anonymous_page = 0;
-	// }
 	
 	/*
 	 * Handle the "normal" (no error) case first.
 	 */
 	if (likely(!(fault & (VM_FAULT_ERROR | VM_FAULT_BADMAP |
-			      VM_FAULT_BADACCESS))))
+			      VM_FAULT_BADACCESS)))) {
+		struct arm_smccc_res smccc_res;
+		extern int do_mprotect_pkey(unsigned long start, size_t len, unsigned long prot, int pkey);
+		if (current->is_shelter && current->gpt_id != 0) {
+			if (current->finish_do_anonymous_page) {
+				arm_smccc_smc(0x80000FF9, addr, current->pid, 0, 0, 0, 0, 0, &smccc_res); // SAVE_PAGE
+				printk(KERN_INFO "before ksys_mmap_pgoff, Anonymous fault addr/paddr = 0x%lx/0x%lx\n", addr, smccc_res.a0);
+				ksys_mmap_pgoff(addr & PAGE_MASK, PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_FIXED | MAP_PRIVATE, current->fd_cma, 0);
+				current->finish_do_anonymous_page = 0;
+			} else if (current->do_read_fault) {
+				arm_smccc_smc(0x80000FF9, addr, current->pid, 0, 0, 0, 0, 0, &smccc_res); // SAVE_PAGE
+				printk(KERN_INFO "before ksys_mmap_pgoff, Read fault addr/paddr = 0x%lx/0x%lx\n", addr, smccc_res.a0);
+				ksys_mmap_pgoff(addr & PAGE_MASK, PAGE_SIZE, PROT_READ | ((vm_flags & VM_EXEC) ? PROT_EXEC : PROT_WRITE), MAP_FIXED | MAP_PRIVATE, current->fd_cma, 0);
+				current->do_read_fault = 0;
+			} else if (current->do_wp_page) {
+				arm_smccc_smc(0x80000FF9, addr, current->pid, 0, 0, 0, 0, 0, &smccc_res); // SAVE_PAGE
+				printk(KERN_INFO "before ksys_mmap_pgoff, Write fault addr/paddr = 0x%lx/0x%lx\n", addr, smccc_res.a0);
+				ksys_mmap_pgoff(addr & PAGE_MASK, PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_FIXED | MAP_PRIVATE, current->fd_cma, 0);
+				current->do_wp_page = 0;
+			} else if (current->do_cow_fault) {
+				arm_smccc_smc(0x80000FF9, addr, current->pid, 0, 0, 0, 0, 0, &smccc_res); // SAVE_PAGE
+				printk(KERN_INFO "before ksys_mmap_pgoff, COW fault addr/paddr = 0x%lx/0x%lx\n", addr, smccc_res.a0);
+				ksys_mmap_pgoff(addr & PAGE_MASK, PAGE_SIZE, PROT_READ | ((vm_flags & VM_EXEC) ? PROT_EXEC : PROT_WRITE), MAP_FIXED | MAP_PRIVATE, current->fd_cma, 0);
+				current->do_cow_fault = 0;
+			} else {
+				arm_smccc_smc(0x80000FF9, addr, current->pid, 0, 0, 0, 0, 0, &smccc_res);
+				printk(KERN_INFO "before ksys_mmap_pgoff, addr/paddr = 0x%lx/0x%lx\n", addr, smccc_res.a0);
+				// ksys_mmap_pgoff(addr & PAGE_MASK, PAGE_SIZE, PROT_READ | PROT_WRITE | ((vm_flags & VM_EXEC) ? PROT_EXEC : 0), MAP_FIXED | MAP_SHARED, current->fd_cma, 0);
+				// current->do_read_fault = 0;
+			}
+			arm_smccc_smc(0x80000FF2, addr, 0, 0, 0, 0, 0, 0, &smccc_res);
+			printk(KERN_INFO "do_page_fault finished! now addr/paddr = 0x%lx/0x%lx\n\n", addr, smccc_res.a0);
+		}
 		return 0;
+	}
 
 	/*
 	 * If we are in kernel mode at this point, we have no context to

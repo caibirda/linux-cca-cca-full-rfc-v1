@@ -920,7 +920,7 @@ void __noreturn do_exit(long code)
 	if (tsk->is_shelter) {
 		// dump_stack();
 		struct pt_regs *task_regs = task_pt_regs(get_current());
-		printk(KERN_INFO "pid %d exit 1: do_exit, pc=0x%llx, sp=0x%llx\n", current->pid, task_regs->pc, task_regs->sp);
+		printk(KERN_INFO "pid %d do_exit, pc = 0x%llx, sp = 0x%llx\n", current->pid, task_regs->pc, task_regs->sp);
 		struct arm_smccc_res smccc_res;
 		arm_smccc_smc(0x80000FFF, (unsigned long) tsk, tsk->pid, 0, 0, 0, 0, 0, &smccc_res);
 	}
@@ -1021,11 +1021,11 @@ do_group_exit(int exit_code)
 	if (current->is_shelter) {
 		// dump_stack();
 		struct pt_regs *task_regs = task_pt_regs(get_current());
-		printk(KERN_INFO "pid %d exit 2: do_group_exit, pc=0x%llx, sp=0x%llx\n", current->pid, task_regs->pc, task_regs->sp);
 		struct arm_smccc_res smccc_res;
-		//shelter destruct
-		arm_smccc_smc(0x80000FF0, (unsigned long) current, current->pid, 0, 0, 0, 0, 0, &smccc_res);
-		//mark the CMA memory that can be released. ENC_MARK_RELEASE	
+		// arm_smccc_smc(0x80000FF3, task_regs->pc, current->pid, 0, 0, 0, 0, 0, &smccc_res);
+		printk(KERN_INFO "pid %d do_group_exit, pc = 0x%llx\n", current->pid, task_regs->pc);
+		arm_smccc_smc(0x80000FF0, (unsigned long) current, current->pid, 0, 0, 0, 0, 0, &smccc_res); // shelter destruct
+		// mark the CMA memory that can be released. ENC_MARK_RELEASE	
 		ksys_ioctl(current->fd_cma, 0x80000F03, 0);	
 	}
 	do_exit(exit_code);

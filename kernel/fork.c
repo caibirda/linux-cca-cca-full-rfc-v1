@@ -2717,12 +2717,11 @@ pid_t kernel_clone(struct kernel_clone_args *args)
 		p->close_shelter = 0;
 		p->gpt_id = current->gpt_id;
 		p->fd_cma = current->fd_cma;
-		p->finish_do_anonymous_page = current->finish_do_anonymous_page;
 		p->wait_alloc = 1;
 		struct arm_smccc_res smccc_res;
 		// thread
 		if (clone_flags & CLONE_VM) { 
-			printk(KERN_INFO "thread in kernel_fork, current pid:%d, child pid:%d\n", current->pid, p->pid);
+			printk(KERN_INFO "kernel_clone thread, current pid: %d, child pid: %d\n", current->pid, p->pid);
 			// p->task_signal_stack_virt = task_singal_stack_virt;
 			//shelter_clone
 			arm_smccc_smc(0x80000F03, (unsigned long)p, current->pid, p->pid, 0, 0, 0, 0, &smccc_res);
@@ -2731,7 +2730,7 @@ pid_t kernel_clone(struct kernel_clone_args *args)
 		}
 		// fork
 		else {
-			printk(KERN_INFO "current pid %d fork in kernel_clone, child pid:%d\n", current->pid, p->pid);
+			printk(KERN_INFO "kernel_clone fork, current pid: %d, child pid: %d\n", current->pid, p->pid);
 			// p->task_signal_stack_virt = task_singal_stack_virt;
 			//shelter_clone
 			arm_smccc_smc(0x80000F03, (unsigned long)p, current->pid, p->pid, 1, 0, 0, 0, &smccc_res);
