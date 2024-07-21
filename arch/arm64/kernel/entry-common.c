@@ -656,9 +656,9 @@ asmlinkage void noinstr el0t_64_sync_handler(struct pt_regs *regs)
 	unsigned long far = read_sysreg(far_el1);
 	unsigned long sysno = regs->regs[8];
 	struct arm_smccc_res smccc_res;
-	if (current->is_shelter || current->is_debug) {
-		printk(KERN_INFO "\nsysno: %lu, esr: 0x%lx, far: 0x%lx, pc: 0x%lx\n", sysno, esr, far, regs->pc);
-	}
+	// if (current->is_shelter || current->is_debug) {
+	// 	printk(KERN_INFO "\nsysno: %lu, esr: 0x%lx, far: 0x%lx, pc: 0x%lx\n", sysno, esr, far, regs->pc);
+	// }
 
 	// exec smc exception call as long as it's not svc call
 	if(current->is_shelter && ESR_ELx_EC(esr) != ESR_ELx_EC_SVC64){

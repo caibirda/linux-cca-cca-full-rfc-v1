@@ -755,7 +755,7 @@ struct task_struct {
 	unsigned long is_shelter;
 	unsigned long is_debug;
 	unsigned long task_signal_stack_virt;
-	unsigned long wait_alloc;
+	unsigned long page_fault_res;
 	unsigned char close_shelter;
 	unsigned char fd_cma;
 	unsigned char gpt_id;
@@ -765,6 +765,7 @@ struct task_struct {
 	unsigned char do_shared_fault;
 	unsigned char do_wp_page;
 	unsigned char wait_page_fault;
+	unsigned char wait_alloc;
 	
 	/*
 	 * This begins the randomizable portion of task_struct. Only
