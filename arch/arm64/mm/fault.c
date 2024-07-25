@@ -679,28 +679,28 @@ retry:
 	if (likely(!(fault & (VM_FAULT_ERROR | VM_FAULT_BADMAP |
 			      VM_FAULT_BADACCESS)))) {
 		struct arm_smccc_res smccc_res;
-		extern int do_mprotect_pkey(unsigned long start, size_t len, unsigned long prot, int pkey);
 		if (current->is_shelter && current->gpt_id != 0) {
 			get_usr_pa(addr, current, &current->page_fault_res);
 			if (current->finish_do_anonymous_page) {
 				printk(KERN_INFO "before ksys_mmap_pgoff, Anonymous fault addr/paddr = 0x%lx/0x%lx\n", addr, current->page_fault_res);
-				ksys_mmap_pgoff(addr & PAGE_MASK, PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_FIXED | MAP_PRIVATE, current->fd_cma, 0);
+				ksys_mmap_pgoff(addr & PAGE_MASK, PAGE_SIZE, PROT_READ | ((vm_flags & VM_EXEC) ? PROT_EXEC : PROT_WRITE), MAP_FIXED | ((vm_flags & VM_SHARED) ? MAP_SHARED : MAP_PRIVATE), current->fd_cma, 0);
 				current->finish_do_anonymous_page = 0;
 			} else if (current->do_read_fault) {
 				printk(KERN_INFO "before ksys_mmap_pgoff, Read fault addr/paddr = 0x%lx/0x%lx\n", addr, current->page_fault_res);
-				ksys_mmap_pgoff(addr & PAGE_MASK, PAGE_SIZE, PROT_READ | ((vm_flags & VM_EXEC) ? PROT_EXEC : PROT_WRITE), MAP_FIXED | MAP_PRIVATE, current->fd_cma, 0);
+				ksys_mmap_pgoff(addr & PAGE_MASK, PAGE_SIZE, PROT_READ | ((vm_flags & VM_EXEC) ? PROT_EXEC : PROT_WRITE), MAP_FIXED | ((vm_flags & VM_SHARED) ? MAP_SHARED : MAP_PRIVATE), current->fd_cma, 0);
 				current->do_read_fault = 0;
 			} else if (current->do_wp_page) {
 				printk(KERN_INFO "before ksys_mmap_pgoff, Write fault addr/paddr = 0x%lx/0x%lx\n", addr, current->page_fault_res);
-				ksys_mmap_pgoff(addr & PAGE_MASK, PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_FIXED | MAP_PRIVATE, current->fd_cma, 0);
+				ksys_mmap_pgoff(addr & PAGE_MASK, PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_FIXED | ((vm_flags & VM_SHARED) ? MAP_SHARED : MAP_PRIVATE), current->fd_cma, 0);
 				current->do_wp_page = 0;
 			} else if (current->do_cow_fault) {
 				printk(KERN_INFO "before ksys_mmap_pgoff, COW fault addr/paddr = 0x%lx/0x%lx\n", addr, current->page_fault_res);
-				ksys_mmap_pgoff(addr & PAGE_MASK, PAGE_SIZE, PROT_READ | ((vm_flags & VM_EXEC) ? PROT_EXEC : PROT_WRITE), MAP_FIXED | MAP_PRIVATE, current->fd_cma, 0);
+				ksys_mmap_pgoff(addr & PAGE_MASK, PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_FIXED | MAP_PRIVATE, current->fd_cma, 0);
 				current->do_cow_fault = 0;
 			} else if (current->do_shared_fault) {
 				printk(KERN_INFO "before ksys_mmap_pgoff, Shared fault addr/paddr = 0x%lx/0x%lx\n", addr, current->page_fault_res);
-				ksys_mmap_pgoff(addr & PAGE_MASK, PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_FIXED | MAP_SHARED, current->fd_cma, 0);
+				// ksys_mmap_pgoff(addr & PAGE_MASK, PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_FIXED | MAP_SHARED, current->fd_cma, 0);
+				arm_smccc_smc(0x80000FF6, addr & PAGE_MASK, PAGE_SIZE, current->pid, 0, 0, 0, 0, &smccc_res); // SET_ROOT
 				current->do_shared_fault = 0;
 			} else {
 				printk(KERN_INFO "before ksys_mmap_pgoff, addr = 0x%lx\n", addr);
