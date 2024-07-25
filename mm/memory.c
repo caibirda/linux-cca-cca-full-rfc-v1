@@ -3341,12 +3341,12 @@ static vm_fault_t do_wp_page(struct vm_fault *vmf)
 	__releases(vmf->ptl)
 {
 	struct arm_smccc_res smccc_res;
-	// if (current->is_shelter && current->gpt_id != 0) {
+	if (current->is_shelter && current->gpt_id != 0) {
 	// 	arm_smccc_smc(0x80000FF2, vmf->address, 0, 0, 0, 0, 0, 0, &smccc_res);
-	// 	printk(KERN_INFO "\ndo_wp_page pid: %d, addr/paddr: 0x%lx/0x%lx\n", current->pid, vmf->address, smccc_res.a0);
+		printk(KERN_INFO "\ndo_wp_page pid: %d, addr/paddr: 0x%lx/0x%lx\n", current->pid, vmf->address, smccc_res.a0);
 	// 	printk(KERN_INFO "before do_wp_page, SMC to read_addr\n");
 	// 	arm_smccc_smc(0x80000FF3, vmf->address, current->pid, 0, 0, 0, 0, 0, &smccc_res);
-	// }
+	}
 	const bool unshare = vmf->flags & FAULT_FLAG_UNSHARE;
 	struct vm_area_struct *vma = vmf->vma;
 	struct folio *folio = NULL;
@@ -4632,11 +4632,11 @@ uncharge_out:
 
 static vm_fault_t do_shared_fault(struct vm_fault *vmf)
 {
-	struct arm_smccc_res smccc_res;
-	if (current->is_shelter && current->gpt_id != 0) {
-		printk(KERN_INFO "\ndo_shared_fault addr: 0x%lx\n", vmf->address);
-		current->do_shared_fault = 1;
-	}
+	// struct arm_smccc_res smccc_res;
+	// if (current->is_shelter && current->gpt_id != 0) {
+	// 	printk(KERN_INFO "\ndo_shared_fault addr: 0x%lx\n", vmf->address);
+	// 	current->do_shared_fault = 1;
+	// }
 	struct vm_area_struct *vma = vmf->vma;
 	vm_fault_t ret, tmp;
 
@@ -4750,7 +4750,7 @@ int numa_migrate_prep(struct page *page, struct vm_area_struct *vma,
 
 static vm_fault_t do_numa_page(struct vm_fault *vmf)
 {
-	if (current->is_shelter) {
+	if (current->is_shelter && current->gpt_id != 0) {
 		printk(KERN_INFO "\ndo_numa_page addr: 0x%lx\n", vmf->address);
 		panic("\nnot support do_numa_page\n");
 	}

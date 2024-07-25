@@ -667,9 +667,9 @@ asmlinkage void noinstr el0t_64_sync_handler(struct pt_regs *regs)
 	}
 	switch (ESR_ELx_EC(esr)) {
 	case ESR_ELx_EC_SVC64:
-		// if (current->is_shelter || current->is_debug) {
-		// 	printk(KERN_INFO "\nel0_svc: sysno: %lu, pc: 0x%lx\n", sysno, regs->pc);
-		// }
+		if (current->is_shelter || current->is_debug) {
+			printk(KERN_INFO "\nel0_svc: sysno: %lu, pc: 0x%lx\n", sysno, regs->pc);
+		}
 		el0_svc(regs);
         break;
     case ESR_ELx_EC_DABT_LOW:
