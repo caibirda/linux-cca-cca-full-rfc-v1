@@ -855,7 +855,6 @@ static int do_vfs_ioctl(struct file *filp, unsigned int fd,
 
 SYSCALL_DEFINE3(ioctl, unsigned int, fd, unsigned int, cmd, unsigned long, arg)
 {
-	// printk(KERN_INFO "Entering ioctl syscall fd: %u, cmd: %u, arg: %u\n", fd, cmd, arg);
 	struct fd f = fdget(fd);
 	int error;
 
