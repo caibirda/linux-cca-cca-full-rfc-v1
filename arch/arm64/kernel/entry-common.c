@@ -661,15 +661,14 @@ asmlinkage void noinstr el0t_64_sync_handler(struct pt_regs *regs)
 	// }
 
 	// exec smc exception call as long as it's not svc call
-	if(current->is_shelter && ESR_ELx_EC(esr) != ESR_ELx_EC_SVC64){
-		struct arm_smccc_res smccc_res;
+	if (current->is_shelter && ESR_ELx_EC(esr) != ESR_ELx_EC_SVC64) {
 		arm_smccc_smc(0x80000FF7, (unsigned long *)regs->regs, 0, 0, 0, 0, 0, 0, &smccc_res);
 	}
 	switch (ESR_ELx_EC(esr)) {
 	case ESR_ELx_EC_SVC64:
-		if (current->is_shelter || current->is_debug) {
-			printk(KERN_INFO "\nel0_svc: sysno: %lu, pc: 0x%lx\n", sysno, regs->pc);
-		}
+		// if (current->is_shelter || current->is_debug) {
+		// 	printk(KERN_INFO "\nel0_svc: sysno: %lu, pc: 0x%lx\n", sysno, regs->pc);
+		// }
 		el0_svc(regs);
         break;
     case ESR_ELx_EC_DABT_LOW:

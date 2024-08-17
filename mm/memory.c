@@ -3342,7 +3342,7 @@ static vm_fault_t do_wp_page(struct vm_fault *vmf)
 {
 	struct arm_smccc_res smccc_res;
 	if (current->is_shelter && current->gpt_id != 0) {
-	// 	arm_smccc_smc(0x80000FF2, vmf->address, 0, 0, 0, 0, 0, 0, &smccc_res);
+		arm_smccc_smc(0x80000FF2, vmf->address, 0, 0, 0, 0, 0, 0, &smccc_res);
 		printk(KERN_INFO "\ndo_wp_page pid: %d, addr/paddr: 0x%lx/0x%lx\n", current->pid, vmf->address, smccc_res.a0);
 	// 	printk(KERN_INFO "before do_wp_page, SMC to read_addr\n");
 	// 	arm_smccc_smc(0x80000FF3, vmf->address, current->pid, 0, 0, 0, 0, 0, &smccc_res);

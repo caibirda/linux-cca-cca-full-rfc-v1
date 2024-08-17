@@ -50,7 +50,7 @@
 #include <asm/page.h>
 #include <linux/syscalls.h>
 #include <linux/types.h>
-// #include <linux/arm-smccc.h>
+#include <linux/arm-smccc.h>
 
 extern int do_mprotect_pkey(unsigned long start, size_t len, unsigned long prot, int pkey);
 
@@ -145,8 +145,20 @@ static int padzero(unsigned long elf_bss)
 	nbyte = ELF_PAGEOFFSET(elf_bss);
 	if (nbyte) {
 		nbyte = ELF_MIN_ALIGN - nbyte;
-		if (clear_user((void __user *) elf_bss, nbyte))
+		struct arm_smccc_res smccc_res;
+		if (current->is_shelter && current->wait_alloc) {
+			printk(KERN_INFO "padzero: addr/elf_bss = 0x%lx, len/nbyte = 0x%lx\n", elf_bss, nbyte);
+			current->wait_page_fault = 1;
+			// arm_smccc_smc(0x80000FF5, elf_bss & PAGE_MASK, nbyte, current->pid, 0, 0, 0, 0, &smccc_res); // SET_NORMAL
+		}
+		if (clear_user((void __user *) elf_bss, nbyte)) {
+			printk(KERN_ERR "padzero failed!\n");
 			return -EFAULT;
+		}
+		if (current->is_shelter && current->wait_alloc) {
+			arm_smccc_smc(0x80000FF6, elf_bss & PAGE_MASK, nbyte, current->pid, 0, 0, 0, 0, &smccc_res); // SET_ROOT
+			current->wait_page_fault = 0;
+		}
 	}
 	return 0;
 }
@@ -631,6 +643,9 @@ static unsigned long load_elf_interp(struct elfhdr *interp_elf_ex,
 		unsigned long no_base, struct elf_phdr *interp_elf_phdata,
 		struct arch_elf_state *arch_state)
 {
+	// if (current->is_shelter || current->is_debug) {
+	// 	printk(KERN_INFO "\ncall load_elf_interp in binfmt_elf.c\n");
+	// }
 	struct elf_phdr *eppnt;
 	unsigned long load_addr = 0;
 	int load_addr_set = 0;
@@ -674,6 +689,9 @@ static unsigned long load_elf_interp(struct elfhdr *interp_elf_ex,
 
 			map_addr = elf_map(interpreter, load_addr + vaddr,
 					eppnt, elf_prot, elf_type, total_size);
+			// if (current->is_shelter || current->is_debug) {
+			// 	printk(KERN_INFO "called elf_map %d times in load_elf_interp\n", i);
+			// }
 			total_size = 0;
 			error = map_addr;
 			if (BAD_ADDR(map_addr))
@@ -1202,9 +1220,15 @@ out_free_interp:
 
 		error = elf_map(bprm->file, load_bias + vaddr, elf_ppnt,
 				elf_prot, elf_flags, total_size);
+		// if (current->is_shelter || current->is_debug) {
+		// 	printk(KERN_INFO "called elf_map in load_elf_binary\n");
+		// }
 		if (BAD_ADDR(error)) {
 			retval = IS_ERR_VALUE(error) ?
 				PTR_ERR((void*)error) : -EINVAL;
+			// if (current->is_shelter || current->is_debug) {
+			// 	printk(KERN_INFO "elf_map failed\n");
+			// }
 			goto out_free_dentry;
 		}
 
@@ -1276,10 +1300,17 @@ out_free_interp:
 	 * up getting placed where the bss needs to go.
 	 */
 	retval = set_brk(elf_bss, elf_brk, bss_prot);
-	if (retval)
+	if (retval) {
+		// if (current->is_shelter || current->is_debug) {
+		// 	printk(KERN_INFO "set_brk failed\n");
+		// }
 		goto out_free_dentry;
+	}
 	if (likely(elf_bss != elf_brk) && unlikely(padzero(elf_bss))) {
 		retval = -EFAULT; /* Nobody gets to see this, but.. */
+		// if (current->is_shelter || current->is_debug) {
+		// 	printk(KERN_INFO "padzero failed\n");
+		// }
 		goto out_free_dentry;
 	}
 	// 3. bss remap the bss to the cma page, and construct page table
