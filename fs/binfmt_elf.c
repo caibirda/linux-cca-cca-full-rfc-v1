@@ -367,12 +367,11 @@ create_elf_tables(struct linux_binprm *bprm, const struct elfhdr *exec,
 	return 0;
 }
 
-// Notice
 static unsigned long elf_map(struct file *filep, unsigned long addr,
 		const struct elf_phdr *eppnt, int prot, int type,
 		unsigned long total_size)
 {
-	if (current->is_shelter) {
+	if (current->is_shelter || current->is_debug) {
 		printk(KERN_INFO "\ncall elf_map in binfmt_elf.c\n");
 	}
 	unsigned long map_addr;
@@ -396,32 +395,11 @@ static unsigned long elf_map(struct file *filep, unsigned long addr,
 	*/
 	if (total_size) {
 		total_size = ELF_PAGEALIGN(total_size);
-		if (current->is_shelter && total_size) {
-			printk(KERN_INFO "elf_map ELF/interpreter: addr = 0x%lx, total_size = 0x%lx, size = 0x%lx\n", addr, total_size, size);
-			map_addr = ksys_mmap_pgoff(addr, total_size, prot, (addr ? MAP_FIXED : 0) | type | MAP_LOCKED, current->fd_cma, off);
-			printk(KERN_INFO "map result: addr = 0x%lx, len = 0x%lx, end = 0x%lx\n", map_addr, total_size, map_addr + total_size);
-			loff_t ld_pos = off;
-            vfs_read(filep, (char *)map_addr, total_size, &ld_pos); // copy ld to cma memory
-        } else {
-			map_addr = vm_mmap(filep, addr, total_size, prot, type, off);
-		}
-		if (!BAD_ADDR(map_addr)) {
+		map_addr = vm_mmap(filep, addr, total_size, prot, type, off);
+		if (!BAD_ADDR(map_addr))
 			vm_munmap(map_addr+size, total_size-size);
-            if (current->is_shelter && total_size) {
-                printk(KERN_INFO "vm_munmap addr:0x%lx, len:0x%lx, end:0x%lx\n", map_addr + size, total_size - size, map_addr + total_size);
-            }
-        }
-	} else {
-		if (current->is_shelter) {
-			// 2. .text, .data allocate cma memory to load elf section and construct page tables in this location
-			printk(KERN_INFO "load .text&.data to cma memory, addr=0x%lx, len=0x%lx, off=0x%lx\n", addr, size, off);
-			loff_t elf_pos = off;
-			map_addr = ksys_mmap_pgoff(addr, size, prot, MAP_FIXED | type | MAP_LOCKED, current->fd_cma, off);
-			vfs_read(filep, (char *)map_addr, size, &elf_pos); //copy elf section to cma memory
-        }
-		else
-			map_addr = vm_mmap(filep, addr, size, prot, type, off);
-	}
+	} else
+		map_addr = vm_mmap(filep, addr, size, prot, type, off);
 
 	if ((type & MAP_FIXED_NOREPLACE) &&
 	    PTR_ERR((void *)map_addr) == -EEXIST)
@@ -1271,10 +1249,10 @@ out_free_interp:
 	}
 	// 3. bss remap the bss to the cma page, and construct page table
 	if (current->is_shelter) {
-		printk(KERN_INFO "remap the bss to the cma page\n");
+		printk(KERN_INFO "\nremap the bss to the cma page\n");
 		int start = ELF_PAGEALIGN(elf_bss);
 		int end = ELF_PAGEALIGN(elf_brk);
-		ksys_mmap_pgoff(start, end - start, PROT_READ | PROT_WRITE, MAP_FIXED | MAP_PRIVATE, current->fd_cma, 0);
+		ksys_mmap_pgoff(start, end - start, PROT_READ | PROT_WRITE, MAP_FIXED | MAP_PRIVATE | MAP_LOCKED, current->fd_cma, 0);
     }
 
 	if (interpreter) {

@@ -2735,7 +2735,7 @@ pid_t kernel_clone(struct kernel_clone_args *args)
 		p->close_shelter = 0;
 		p->gpt_id = current->gpt_id;
 		p->fd_cma = current->fd_cma;
-		p->finish_do_anonymous_page = current->finish_do_anonymous_page;
+		p->do_anonymous_page = current->do_anonymous_page;
 		struct arm_smccc_res smccc_res;
 		// thread
 		if (clone_flags & CLONE_VM) { 

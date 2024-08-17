@@ -3071,6 +3071,16 @@ static struct file *do_sync_mmap_readahead(struct vm_fault *vmf)
 static struct file *do_async_mmap_readahead(struct vm_fault *vmf,
 					    struct folio *folio)
 {
+	// struct arm_smccc_res smccc_res;
+	// if (current->is_shelter || current->is_debug) {
+	// 	arm_smccc_smc(0x80000FF2, vmf->address, 0, 0, 0, 0, 0, 0, &smccc_res);
+	// 	printk(KERN_INFO "before filemap_fault->do_async_mmap_readahead, addr/paddr: 0x%lx/0x%lx\n", vmf->address, smccc_res.a0);
+	// }
+	// if (current->is_shelter && current->gpt_id != 0) {
+	// 	printk(KERN_INFO "before do_async_mmap_readahead addr: 0x%lx, set NORMAL\n", vmf->address);
+	// 	printk(KERN_INFO "vma_start: 0x%lx, vma_end: 0x%lx\n", vmf->vma->vm_start, vmf->vma->vm_end);
+	// 	arm_smccc_smc(0x80000FF5, vmf->address, PAGE_SIZE, current->pid, 0, 0, 0, 0, &smccc_res);
+	// }
 	struct file *file = vmf->vma->vm_file;
 	struct file_ra_state *ra = &file->f_ra;
 	DEFINE_READAHEAD(ractl, file, ra, file->f_mapping, vmf->pgoff);
@@ -3089,6 +3099,14 @@ static struct file *do_async_mmap_readahead(struct vm_fault *vmf,
 		fpin = maybe_unlock_mmap_for_io(vmf, fpin);
 		page_cache_async_ra(&ractl, folio, ra->ra_pages);
 	}
+	// if (current->is_shelter || current->is_debug) {
+	// 	arm_smccc_smc(0x80000FF2, vmf->address, 0, 0, 0, 0, 0, 0, &smccc_res);
+	// 	printk(KERN_INFO "after do_async_mmap_readahead, addr/paddr: 0x%lx/0x%lx\n", vmf->address, smccc_res.a0);
+	// }
+	// if (current->is_shelter && current->gpt_id != 0) {
+	// 	printk(KERN_INFO "after do_async_mmap_readahead addr: 0x%lx, set ROOT\n", vmf->address);
+	// 	arm_smccc_smc(0x80000FF6, vmf->address, PAGE_SIZE, current->pid, 0, 0, 0, 0, &smccc_res);
+	// }
 	return fpin;
 }
 
@@ -3151,7 +3169,19 @@ vm_fault_t filemap_fault(struct vm_fault *vmf)
 		count_vm_event(PGMAJFAULT);
 		count_memcg_event_mm(vmf->vma->vm_mm, PGMAJFAULT);
 		ret = VM_FAULT_MAJOR;
+		// struct arm_smccc_res smccc_res;
+		// if (current->is_shelter || current->is_debug) {
+		// 	printk(KERN_INFO "before filemap_fault->do_sync_mmap_readahead, addr 0x%lx\n", vmf->address);
+		// }
 		fpin = do_sync_mmap_readahead(vmf);
+		// if (current->is_shelter || current->is_debug) {
+		// 	arm_smccc_smc(0x80000FF2, vmf->address, 0, 0, 0, 0, 0, 0, &smccc_res);
+		// 	printk(KERN_INFO "after do_sync_mmap_readahead allocating physpage, addr/paddr: 0x%lx/0x%lx\n", vmf->address, smccc_res.a0);
+		// }
+		// if (current->is_shelter && current->gpt_id != 0) {
+		// 	printk(KERN_INFO "after do_sync_mmap_readahead addr: 0x%lx, set ROOT\n", vmf->address);
+		// 	arm_smccc_smc(0x80000FF6, vmf->address, PAGE_SIZE, current->pid, 0, 0, 0, 0, &smccc_res);
+		// }
 retry_find:
 		/*
 		 * See comment in filemap_create_folio() why we need

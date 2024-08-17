@@ -653,11 +653,12 @@ static void noinstr el0_fpac(struct pt_regs *regs, unsigned long esr)
 asmlinkage void noinstr el0t_64_sync_handler(struct pt_regs *regs)
 {
 	unsigned long esr = read_sysreg(esr_el1);
+	unsigned long far = read_sysreg(far_el1);
 	unsigned long sysno = regs->regs[8];
 	struct arm_smccc_res smccc_res;
-	// if (current->is_shelter || current->is_debug) {
-	// 	printk(KERN_INFO "\nel0t_64_sync_handler sysno: %lu, esr: 0x%lx, pc: 0x%lx\n", sysno, esr, regs->pc);
-	// }
+	if (current->is_shelter || current->is_debug) {
+		printk(KERN_INFO "\nsysno: %lu, esr: 0x%lx, far: 0x%lx, pc: 0x%lx\n", sysno, esr, far, regs->pc);
+	}
 	switch (ESR_ELx_EC(esr)) {
 	case ESR_ELx_EC_SVC64:
 		// if (current->is_shelter || current->is_debug) {
@@ -680,14 +681,10 @@ asmlinkage void noinstr el0t_64_sync_handler(struct pt_regs *regs)
 			current->task_signal_stack_virt = task_singal_stack_virt;
             printk("pid %d task_shared_virt: 0x%lx, task_singal_stack_virt: 0x%lx\n", current->pid, task_shared_virt, task_singal_stack_virt);
             arm_smccc_smc(0x80000FFD, current->pid, task_shared_virt, task_singal_stack_virt, 0, 0, 0, 0, &smccc_res); // enc_nc_ns
-        } else if (sysno == __NR_execve && current->is_shelter) {
-            printk(KERN_INFO "\npid %d done execve\n",current->pid);
-			unsigned long task_shared_virt = ksys_mmap_pgoff(0, SHELTER_TASK_SHARED_LENGTH, PROT_READ | PROT_WRITE, MAP_SHARED, current->fd_cma, 0);
-            unsigned long task_singal_stack_virt = ksys_mmap_pgoff(0, SHELTER_TASK_SIGNAL_STACK_LENGTH, PROT_READ | PROT_WRITE, MAP_SHARED, current->fd_cma, 0);
-			current->task_signal_stack_virt = task_singal_stack_virt;
-			printk("pid %d task_shared_virt: 0x%lx, task_singal_stack_virt: 0x%lx\n", current->pid, task_shared_virt, task_singal_stack_virt);
-			arm_smccc_smc(0x80000FFD, current->pid, task_shared_virt, task_singal_stack_virt, 0, 0, 0, 0, &smccc_res); // enc_nc_ns
         }
+		else if (sysno == __NR_debug_exec && current->is_debug) {
+			printk(KERN_INFO "\npid %d done debug_exec\n", current->pid);
+		}
         break;
     case ESR_ELx_EC_DABT_LOW:
 		el0_da(regs, esr);
