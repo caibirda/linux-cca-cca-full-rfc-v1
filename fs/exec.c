@@ -2135,11 +2135,12 @@ SYSCALL_DEFINE3(execve,
 		char *kstr = NULL;
 		size_t len;
 
+		// printk argv
 		while (1) {
 			char __user *uarg;
 			printk(KERN_INFO "&argv[%d]: 0x%lx\n", argc, &argv[argc]);
 			if (copy_from_user(&uarg, &argv[argc], sizeof(char *))) {
-				printk(KERN_ERR "copy_from_user failed!\n");
+				printk(KERN_ERR "copy_from_user(&uarg, &argv[argc], sizeof(char *)) failed!\n");
 				return -EFAULT;
 			} else {
 				printk(KERN_INFO "&argv[%d]: 0x%lx -> argv[%d]: 0x%lx\n", argc, &argv[argc], argc, uarg);
@@ -2150,100 +2151,75 @@ SYSCALL_DEFINE3(execve,
 			if (!uarg) break;
 			argc++;
 		}
-
-		while (1) {
-			char __user *uenv;
-			printk(KERN_INFO "&envp[%d]: 0x%lx\n", envc, &envp[envc]);
-			if (copy_from_user(&uenv, &envp[envc], sizeof(char *))) {
-				printk(KERN_ERR "copy_from_user failed!\n");
-				return -EFAULT;
-			} else {
-				printk(KERN_INFO "&envp[%d]: 0x%lx -> envp[%d]: 0x%lx\n", envc, &envp[envc], envc, uenv);
-				// struct arm_smccc_res smccc_res;
-				// arm_smccc_smc(0x80000FF3, (unsigned long)(&envp[envc]), current->pid, 0, 0, 0, 0, 0, &smccc_res);
-				// arm_smccc_smc(0x80000FF3, (unsigned long)(&envp[envc]) + 0x1000, current->pid, 0, 0, 0, 0, 0, &smccc_res);
-			}
-			if (!uenv) break;
-			envc++;
-		}
-
 		kargv = kmalloc_array(argc + 1, sizeof(char *), GFP_KERNEL);
-		kenvp = kmalloc_array(envc + 1, sizeof(char *), GFP_KERNEL);
-
-		if (!kargv || !kenvp) {
-			ret = -ENOMEM;
-			goto out;
-		}
-
 		for (i = 0; i < argc; i++) {
 			char __user *uarg;
 			if (copy_from_user(&uarg, &argv[i], sizeof(char *))) {
-				ret = -EFAULT;
-				goto out;
+				printk(KERN_ERR "copy_from_user(&uarg, &argv[i], sizeof(char *)) failed!\n");
+				return -EFAULT;
 			}
 			len = strnlen_user(uarg, PAGE_SIZE);
-			if (len == 0 || len > PAGE_SIZE) {
-				ret = -EFAULT;
-				goto out;
-			}
 			kstr = kmalloc(len, GFP_KERNEL);
-			if (!kstr) {
-				ret = -ENOMEM;
-				goto out;
-			}
 			if (copy_from_user(kstr, uarg, len)) {
-				kfree(kstr);
-				ret = -EFAULT;
-				goto out;
+				printk(KERN_ERR "copy_from_user(kstr, uarg, len) failed!\n");
+				return -EFAULT;
 			} else {
 				printk(KERN_INFO "argv[%d]: 0x%lx -> %s\n", i, uarg, kstr);
 			}
 			kargv[i] = kstr;
 		}
 		kargv[argc] = NULL;
-
-		for (i = 0; i < envc; i++) {
-			char __user *uenv;
-			if (copy_from_user(&uenv, &envp[i], sizeof(char *))) {
-				ret = -EFAULT;
-				goto out;
-			}
-			len = strnlen_user(uenv, PAGE_SIZE);
-			if (len == 0 || len > PAGE_SIZE) {
-				ret = -EFAULT;
-				goto out;
-			}
-			kstr = kmalloc(len, GFP_KERNEL);
-			if (!kstr) {
-				ret = -ENOMEM;
-				goto out;
-			}
-			if (copy_from_user(kstr, uenv, len)) {
-				kfree(kstr);
-				ret = -EFAULT;
-				goto out;
-			} else {
-				printk(KERN_INFO "envp[%d]: 0x%lx -> %s\n", i, uenv, kstr);
-			}
-			kenvp[i] = kstr;
-		}
-		kenvp[envc] = NULL;
-
 		printk(KERN_INFO "Copied argv:\n");
 		for (i = 0; i < argc; i++)
 			printk(KERN_INFO "argv[%d]: %s\n", i, kargv[i]);
-
-		printk(KERN_INFO "Copied envp:\n");
-		for (i = 0; i < envc; i++)
-			printk(KERN_INFO "envp[%d]: %s\n", i, kenvp[i]);
-		
 		for (i = 0; i < argc; i++)
 			kfree(kargv[i]);
-		for (i = 0; i < envc; i++)
-			kfree(kenvp[i]);
-out:;
 		kfree(kargv);
-		kfree(kenvp);
+
+		// printk envp
+		if (envp) {
+			while (1) {
+				char __user *uenv;
+				printk(KERN_INFO "&envp[%d]: 0x%lx\n", envc, &envp[envc]);
+				if (copy_from_user(&uenv, &envp[envc], sizeof(char *))) {
+					printk(KERN_ERR "copy_from_user(&uenv, &envp[envc], sizeof(char *)) failed!\n");
+					return -EFAULT;
+				} else {
+					printk(KERN_INFO "&envp[%d]: 0x%lx -> envp[%d]: 0x%lx\n", envc, &envp[envc], envc, uenv);
+					// struct arm_smccc_res smccc_res;
+					// arm_smccc_smc(0x80000FF3, (unsigned long)(&envp[envc]), current->pid, 0, 0, 0, 0, 0, &smccc_res);
+					// arm_smccc_smc(0x80000FF3, (unsigned long)(&envp[envc]) + 0x1000, current->pid, 0, 0, 0, 0, 0, &smccc_res);
+				}
+				if (!uenv) break;
+				envc++;
+			}
+			kenvp = kmalloc_array(envc + 1, sizeof(char *), GFP_KERNEL);
+			for (i = 0; i < envc; i++) {
+				char __user *uenv;
+				if (copy_from_user(&uenv, &envp[i], sizeof(char *))) {
+					printk(KERN_ERR "copy_from_user(&uenv, &envp[i], sizeof(char *)) failed!\n");
+					return -EFAULT;
+				}
+				len = strnlen_user(uenv, PAGE_SIZE);
+				kstr = kmalloc(len, GFP_KERNEL);
+				if (copy_from_user(kstr, uenv, len)) {
+					printk(KERN_ERR "copy_from_user(kstr, uenv, len) failed!\n");
+					return -EFAULT;
+				} else {
+					printk(KERN_INFO "envp[%d]: 0x%lx -> %s\n", i, uenv, kstr);
+				}
+				kenvp[i] = kstr;
+			}
+			kenvp[envc] = NULL;
+			printk(KERN_INFO "Copied envp:\n");
+			for (i = 0; i < envc; i++)
+				printk(KERN_INFO "envp[%d]: %s\n", i, kenvp[i]);
+			for (i = 0; i < envc; i++)
+				kfree(kenvp[i]);
+			kfree(kenvp);
+		} else {
+			printk(KERN_INFO "envp is NULL!\n");
+		}
 		printk(KERN_INFO "\n");
 	}
 	return do_execve(getname(filename), argv, envp);
