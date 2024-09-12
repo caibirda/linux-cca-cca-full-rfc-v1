@@ -1318,9 +1318,9 @@ static long do_sys_openat2(int dfd, const char __user *filename,
 		}
 	}
 	putname(tmp);
-	if (current->is_shelter) {
-		printk(KERN_INFO "openat %s return %d\n", tmp->name, fd);
-	}
+	// if (current->is_shelter) {
+	// 	printk(KERN_INFO "openat %s return %d\n", tmp->name, fd);
+	// }
 	return fd;
 }
 

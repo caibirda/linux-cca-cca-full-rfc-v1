@@ -883,7 +883,7 @@ static int get_sigframe(struct rt_sigframe_user_layout *user,
 
 	if (current->is_shelter) {
 		sp = sp_top = current->task_signal_stack_virt + SHELTER_TASK_SIGNAL_STACK_LENGTH;
-		printk("shelter output signal.c\n");
+		printk(KERN_INFO "signal.c: set sp/sp_top in get_sigframe\n");
 	} else
 		sp = sp_top = sigsp(regs->sp, ksig);
 

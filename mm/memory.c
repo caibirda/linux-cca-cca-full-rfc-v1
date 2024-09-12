@@ -3344,8 +3344,8 @@ static vm_fault_t do_wp_page(struct vm_fault *vmf)
 	if (current->is_shelter && current->gpt_id != 0) {
 		arm_smccc_smc(0x80000FF2, vmf->address, 0, 0, 0, 0, 0, 0, &smccc_res);
 		printk(KERN_INFO "\ndo_wp_page pid: %d, addr/paddr: 0x%lx/0x%lx\n", current->pid, vmf->address, smccc_res.a0);
-	// 	printk(KERN_INFO "before do_wp_page, SMC to read_addr\n");
-	// 	arm_smccc_smc(0x80000FF3, vmf->address, current->pid, 0, 0, 0, 0, 0, &smccc_res);
+		// printk(KERN_INFO "before do_wp_page, SMC to read_addr\n");
+		// arm_smccc_smc(0x80000FF3, vmf->address, current->pid, 0, 0, 0, 0, 0, &smccc_res);
 	}
 	const bool unshare = vmf->flags & FAULT_FLAG_UNSHARE;
 	struct vm_area_struct *vma = vmf->vma;
@@ -4048,10 +4048,9 @@ out_release:
  */
 static vm_fault_t do_anonymous_page(struct vm_fault *vmf)
 {
-	struct arm_smccc_res smccc_res;
-	if (current->is_shelter && current->gpt_id != 0) {
-		printk(KERN_INFO "do_anonymous_page addr: 0x%lx\n", vmf->address);
-	}
+	// if (current->is_shelter && current->gpt_id != 0) {
+	// 	printk(KERN_INFO "do_anonymous_page addr: 0x%lx\n", vmf->address);
+	// }
 	struct vm_area_struct *vma = vmf->vma;
 	struct page *page;
 	vm_fault_t ret = 0;
@@ -4535,7 +4534,7 @@ static vm_fault_t do_read_fault(struct vm_fault *vmf)
 {
 	struct arm_smccc_res smccc_res;
 	if (current->is_shelter && current->gpt_id != 0) {
-		printk(KERN_INFO "\ndo_read_fault addr: 0x%lx\n", vmf->address);
+		// printk(KERN_INFO "\ndo_read_fault addr: 0x%lx\n", vmf->address);
 		current->do_read_fault = 1;
 	}
 	vm_fault_t ret = 0;
@@ -4571,7 +4570,7 @@ static vm_fault_t do_cow_fault(struct vm_fault *vmf)
 {
 	struct arm_smccc_res smccc_res;
 	if (current->is_shelter && current->gpt_id != 0) {
-		printk(KERN_INFO "\ndo_cow_fault addr: 0x%lx\n", vmf->address);
+		// printk(KERN_INFO "\ndo_cow_fault addr: 0x%lx\n", vmf->address);
 		current->do_cow_fault = 1;
 	}
 	struct vm_area_struct *vma = vmf->vma;
@@ -4633,10 +4632,10 @@ uncharge_out:
 static vm_fault_t do_shared_fault(struct vm_fault *vmf)
 {
 	// struct arm_smccc_res smccc_res;
-	// if (current->is_shelter && current->gpt_id != 0) {
-	// 	printk(KERN_INFO "\ndo_shared_fault addr: 0x%lx\n", vmf->address);
-	// 	current->do_shared_fault = 1;
-	// }
+	if (current->is_shelter && current->gpt_id != 0) {
+		printk(KERN_INFO "\ndo_shared_fault addr: 0x%lx\n", vmf->address);
+		current->do_shared_fault = 1;
+	}
 	struct vm_area_struct *vma = vmf->vma;
 	vm_fault_t ret, tmp;
 

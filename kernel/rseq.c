@@ -336,9 +336,9 @@ void rseq_syscall(struct pt_regs *regs)
 SYSCALL_DEFINE4(rseq, struct rseq __user *, rseq, u32, rseq_len,
 		int, flags, u32, sig)
 {
-	if (current->is_shelter) {
-		printk(KERN_INFO "syscall rseq: rseq = 0x%lx, rseq_len = %d\n", rseq, rseq_len);
-	}
+	// if (current->is_shelter) {
+	// 	printk(KERN_INFO "syscall rseq: rseq = 0x%lx, rseq_len = %d\n", rseq, rseq_len);
+	// }
 	int ret;
 
 	if (flags & RSEQ_FLAG_UNREGISTER) {

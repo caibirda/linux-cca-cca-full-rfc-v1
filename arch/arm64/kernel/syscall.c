@@ -83,7 +83,7 @@ int syscall_trace_enter(struct pt_regs *regs);
 void syscall_trace_exit(struct pt_regs *regs);
 
 static int should_page_fault(unsigned long addr, struct task_struct *task) {
-	printk(KERN_INFO "should addr: 0x%lx page fault?\n", addr);
+	// printk(KERN_INFO "should addr: 0x%lx page fault?\n", addr);
 	struct mm_struct *mm;
 	pgd_t *pgd;
 	p4d_t *p4d;
@@ -186,31 +186,37 @@ static void el0_svc_common(struct pt_regs *regs, int scno, int sc_nr,
 	}
 	struct arm_smccc_res smccc_res;
 	if (current->is_shelter && current->wait_alloc) {
-		printk(KERN_INFO "\npid %d wait_alloc\n", current->pid);			
-		unsigned long task_shared_virt, task_singal_stack_virt = 0;
-		task_shared_virt = ksys_mmap_pgoff(0, SHELTER_TASK_SHARED_LENGTH, PROT_READ | PROT_WRITE, MAP_SHARED, current->fd_cma, 0);
-		task_singal_stack_virt = ksys_mmap_pgoff(0, SHELTER_TASK_SIGNAL_STACK_LENGTH, PROT_READ | PROT_WRITE, MAP_SHARED, current->fd_cma, 0);
-		printk(KERN_INFO "handle_wait_alloc, task_shared_virt:0x%lx, task_singal_stack_virt:0x%lx\n", task_shared_virt, task_singal_stack_virt);
+		// printk(KERN_INFO "\npid %d wait_alloc\n", current->pid);
+		struct fd f = fdget(current->fd_cma);
+		// printk(KERN_INFO "before allocating task_shared/singal_virt:\n");
+		// printk(KERN_INFO "current->fd_cma:%d, filename:%s\n", current->fd_cma, f.file->f_path.dentry->d_name.name);
+		if (strncmp(f.file->f_path.dentry->d_name.name, "SHELTER", 7) != 0) {
+			panic("current->fd_cma has been changed!!!\n\n");
+		}
+		unsigned long task_shared_virt = ksys_mmap_pgoff(0, SHELTER_TASK_SHARED_LENGTH, PROT_READ | PROT_WRITE, MAP_SHARED, current->fd_cma, 0);
+		unsigned long task_singal_stack_virt = ksys_mmap_pgoff(0, SHELTER_TASK_SIGNAL_STACK_LENGTH, PROT_READ | PROT_WRITE, MAP_SHARED, current->fd_cma, 0);
+		// printk(KERN_INFO "handle_wait_alloc, task_shared_virt:0x%lx, task_singal_stack_virt:0x%lx\n", task_shared_virt, task_singal_stack_virt);
 		current->task_signal_stack_virt = task_singal_stack_virt;
 		arm_smccc_smc(0x80000FFD, current->pid, task_shared_virt, task_singal_stack_virt, 0, 0, 0, 0, &smccc_res);
 		current->wait_alloc = 0;
-		printk(KERN_INFO "after handle_wait_alloc\n");
+		// printk(KERN_INFO "after handle_wait_alloc\n");
 	}
-	if (current->is_shelter && (scno == __NR_newfstatat || scno == __NR_readlinkat)) {
+	if (current->is_shelter && (scno == __NR_newfstatat || scno == __NR_readlinkat || scno == __NR_write || scno == __NR_openat)) {
 		unsigned long ptr = regs->regs[1];
 		struct task_struct *task = current;
 		if (should_page_fault(ptr, task)) {
-			char buffer[256];
+			void *buffer = kzalloc(1, GFP_KERNEL);
 			current->wait_page_fault = 1;
-			if (copy_from_user(buffer, (const void __user *)ptr, sizeof(buffer)) != 0) {
+			if (copy_from_user(buffer, (const void __user *)ptr, 1) != 0) {
 				panic("\nfailed to copy data from user space\n\n");
-			} else {
-				printk(KERN_INFO "newfstatat/readlinkat filename: %s, addr: 0x%lx\n\n", buffer, regs->regs[1]);
+			// } else {
+			// 	printk(KERN_INFO "\nsyscall %s need page fault!!!\n", scno == __NR_newfstatat ? "newfstatat" : (scno == __NR_readlinkat ? "readlinkat" : (scno == __NR_write ? "write" : "openat")));
 			}
 			arm_smccc_smc(0x80000FF6, ptr & PAGE_MASK, PAGE_SIZE, current->pid, 0, 0, 0, 0, &smccc_res); // SET_ROOT
 			current->wait_page_fault = 0;
-		} else {
-			printk(KERN_INFO "no need for page fault!\n\n");
+			kfree(buffer);
+		// } else {
+		// 	printk(KERN_INFO "no need for page fault!\n\n");
 		}
 	}
 	if (current->is_shelter && scno != __NR_shelter_exec){ // sync
@@ -222,7 +228,7 @@ static void el0_svc_common(struct pt_regs *regs, int scno, int sc_nr,
 	if (scno == __NR_shelter_exec && current->is_shelter) {
 		// trap to EL3 to create the new shelter app environment. ENC_NEW_TEST 0x80000FFE
 		current->gpt_id = ksys_ioctl(current->fd_cma, 0x80000FFE, 0);
-		printk(KERN_INFO "after ksys_ioctl, gpt_id is %d\n", current->gpt_id);
+		// printk(KERN_INFO "after ksys_ioctl, gpt_id is %d\n", current->gpt_id);
 		if (current->gpt_id <= 0) {
 			current->is_shelter = 0;
 			do_group_exit(current->gpt_id);
@@ -230,9 +236,9 @@ static void el0_svc_common(struct pt_regs *regs, int scno, int sc_nr,
 		unsigned long task_shared_virt = ksys_mmap_pgoff(0, SHELTER_TASK_SHARED_LENGTH, PROT_READ | PROT_WRITE, MAP_SHARED, current->fd_cma, 0);
 		unsigned long task_singal_stack_virt = ksys_mmap_pgoff(0, SHELTER_TASK_SIGNAL_STACK_LENGTH, PROT_READ | PROT_WRITE, MAP_SHARED, current->fd_cma, 0);
 		current->task_signal_stack_virt = task_singal_stack_virt;
-		printk("pid %d task_shared_virt: 0x%lx, task_singal_stack_virt: 0x%lx\n", current->pid, task_shared_virt, task_singal_stack_virt);
+		// printk(KERN_INFO "pid %d task_shared_virt: 0x%lx, task_singal_stack_virt: 0x%lx\n", current->pid, task_shared_virt, task_singal_stack_virt);
 		arm_smccc_smc(0x80000FFD, current->pid, task_shared_virt, task_singal_stack_virt, 0, 0, 0, 0, &smccc_res);// enc_nc_ns
-		printk(KERN_INFO "\npid %d done shelter_exec\n", current->pid);
+		// printk(KERN_INFO "\npid %d done shelter_exec\n", current->pid);
 	}
 
 	/*

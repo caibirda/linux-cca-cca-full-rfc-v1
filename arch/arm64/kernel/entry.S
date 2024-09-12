@@ -567,7 +567,7 @@ alternative_else_nop_endif
 	eret
 	.endif
 	sb
-7:	//shelter_enter
+7:	// shelter_enter
 	ldp	x0, x1, [sp, #16 * 0]
 	ldp	x2, x3, [sp, #16 * 1]
 	ldp	x4, x5, [sp, #16 * 2]

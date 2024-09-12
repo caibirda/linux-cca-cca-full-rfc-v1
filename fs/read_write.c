@@ -474,9 +474,9 @@ ssize_t vfs_read(struct file *file, char __user *buf, size_t count, loff_t *pos)
 		add_rchar(current, ret);
 	}
 	inc_syscr(current);
-	if (current->is_shelter && current->is_debug) {
-		printk(KERN_INFO "vfs_read %s: buf = 0x%lx, len = 0x%lx, ret = 0x%lx\n", file->f_path.dentry->d_iname, buf, count, ret);
-	}
+	// if (current->is_shelter || current->is_debug) {
+	// 	printk(KERN_INFO "vfs_read %s: buf = 0x%lx, len = 0x%lx, ret = 0x%lx\n", file->f_path.dentry->d_iname, buf, count, ret);
+	// }
 	return ret;
 }
 
