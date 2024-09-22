@@ -209,14 +209,11 @@ static void el0_svc_common(struct pt_regs *regs, int scno, int sc_nr,
 			current->wait_page_fault = 1;
 			if (copy_from_user(buffer, (const void __user *)ptr, 1) != 0) {
 				panic("\nfailed to copy data from user space\n\n");
-			// } else {
-			// 	printk(KERN_INFO "\nsyscall %s need page fault!!!\n", scno == __NR_newfstatat ? "newfstatat" : (scno == __NR_readlinkat ? "readlinkat" : (scno == __NR_write ? "write" : "openat")));
+			} else {
+				printk(KERN_INFO "\nsyscall %s need page fault!!!\n", scno == __NR_newfstatat ? "newfstatat" : (scno == __NR_readlinkat ? "readlinkat" : (scno == __NR_write ? "write" : "openat")));
 			}
-			arm_smccc_smc(0x80000FF6, ptr & PAGE_MASK, PAGE_SIZE, current->pid, 0, 0, 0, 0, &smccc_res); // SET_ROOT
 			current->wait_page_fault = 0;
 			kfree(buffer);
-		// } else {
-		// 	printk(KERN_INFO "no need for page fault!\n\n");
 		}
 	}
 	if (current->is_shelter && scno != __NR_shelter_exec){ // sync

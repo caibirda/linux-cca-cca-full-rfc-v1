@@ -3341,12 +3341,10 @@ static vm_fault_t do_wp_page(struct vm_fault *vmf)
 	__releases(vmf->ptl)
 {
 	struct arm_smccc_res smccc_res;
-	if (current->is_shelter && current->gpt_id != 0) {
-		arm_smccc_smc(0x80000FF2, vmf->address, 0, 0, 0, 0, 0, 0, &smccc_res);
-		printk(KERN_INFO "\ndo_wp_page pid: %d, addr/paddr: 0x%lx/0x%lx\n", current->pid, vmf->address, smccc_res.a0);
-		// printk(KERN_INFO "before do_wp_page, SMC to read_addr\n");
-		// arm_smccc_smc(0x80000FF3, vmf->address, current->pid, 0, 0, 0, 0, 0, &smccc_res);
-	}
+	// if (current->is_shelter && current->gpt_id != 0) {
+	// 	arm_smccc_smc(0x80000FF2, vmf->address, 0, 0, 0, 0, 0, 0, &smccc_res);
+	// 	printk(KERN_INFO "\ndo_wp_page pid: %d, addr/paddr: 0x%lx/0x%lx\n", current->pid, vmf->address, smccc_res.a0);
+	// }
 	const bool unshare = vmf->flags & FAULT_FLAG_UNSHARE;
 	struct vm_area_struct *vma = vmf->vma;
 	struct folio *folio = NULL;
@@ -3454,19 +3452,13 @@ copy:
 #endif
 	if (current->is_shelter && current->gpt_id != 0) {
 		// printk(KERN_INFO "before wp_page_copy addr: 0x%lx, set NORMAL for kernel\n", vmf->address);
-		arm_smccc_smc(0x80000FF5, vmf->address & PAGE_MASK, PAGE_SIZE, current->pid, 0, 0, 0, 0, &smccc_res); // SET_NORMAL
+		arm_smccc_smc(0x80000FF5, vmf->address & PAGE_MASK, PAGE_SIZE, 0, 0, 0, 0, 0, &smccc_res); // SET_NORMAL
 		current->do_wp_page = 1;
 	}
 	vm_fault_t res = wp_page_copy(vmf);
 	// if (current->is_shelter && current->gpt_id != 0) {
 	// 	arm_smccc_smc(0x80000FF2, vmf->address, 0, 0, 0, 0, 0, 0, &smccc_res);
 	// 	printk(KERN_INFO "after wp_page_copy, addr/paddr: 0x%lx/0x%lx\n", vmf->address, smccc_res.a0);
-	// 	printk(KERN_INFO "after do_wp_page, SMC to read_addr:\n");
-	// 	arm_smccc_smc(0x80000FF3, vmf->address, current->pid, 0, 0, 0, 0, 0, &smccc_res);
-	// }
-	// if (current->is_shelter && current->gpt_id != 0) {
-	// 	printk(KERN_INFO "after do_wp_page addr: 0x%lx, set ROOT for kernel\n", vmf->address);
-	// 	arm_smccc_smc(0x80000FF6, vmf->address & PAGE_MASK, PAGE_SIZE, current->pid, 0, 0, 0, 0, &smccc_res); // SET_ROOT
 	// }
 	return res;
 }
@@ -4609,7 +4601,7 @@ static vm_fault_t do_cow_fault(struct vm_fault *vmf)
 	// }
 	if (current->is_shelter && current->gpt_id != 0) {
 		// printk(KERN_INFO "before copy_user_highpage, vmf->page addr: 0x%lx, set NORMAL for kernel\n", virt_addr);
-		arm_smccc_smc(0x80000FF5, virt_addr & PAGE_MASK, PAGE_SIZE, current->pid, 0, 0, 0, 0, &smccc_res); // SET_NORMAL
+		arm_smccc_smc(0x80000FF5, virt_addr & PAGE_MASK, PAGE_SIZE, 0, 0, 0, 0, 0, &smccc_res); // SET_NORMAL
 	}
 	copy_user_highpage(vmf->cow_page, vmf->page, vmf->address, vma);
 	__SetPageUptodate(vmf->cow_page);
@@ -4635,6 +4627,7 @@ static vm_fault_t do_shared_fault(struct vm_fault *vmf)
 	if (current->is_shelter && current->gpt_id != 0) {
 		printk(KERN_INFO "\ndo_shared_fault addr: 0x%lx\n", vmf->address);
 		current->do_shared_fault = 1;
+		panic("\ndo_shared_fault is not tested\n");
 	}
 	struct vm_area_struct *vma = vmf->vma;
 	vm_fault_t ret, tmp;

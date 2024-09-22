@@ -529,7 +529,7 @@ static bool is_write_abort(unsigned long esr)
 	return (esr & ESR_ELx_WNR) && !(esr & ESR_ELx_CM);
 }
 
-static int get_usr_pa(unsigned long addr, struct task_struct *task, unsigned long *phys_addr) {
+static unsigned long get_usr_pa(unsigned long addr, struct task_struct *task, unsigned long *phys_addr) {
     struct mm_struct *mm;
     pgd_t *pgd;
     p4d_t *p4d;
@@ -568,7 +568,7 @@ static int get_usr_pa(unsigned long addr, struct task_struct *task, unsigned lon
     }
     *phys_addr = page_to_phys(page) | (addr & ~PAGE_MASK);
     pte_unmap(pte);
-    return 0;
+    return *phys_addr;
 }
 
 static int __kprobes do_page_fault(unsigned long far, unsigned long esr,
@@ -705,8 +705,8 @@ retry:
 			} else {
 				printk(KERN_INFO "not handled case occurs, addr = 0x%lx\n\n", addr);
 			}
-			arm_smccc_smc(0x80000FF2, addr, 0, 0, 0, 0, 0, 0, &smccc_res);
-			printk(KERN_INFO "do_page_fault finished! now addr/paddr = 0x%lx/0x%lx\n\n", addr, smccc_res.a0);
+			// arm_smccc_smc(0x80000FF2, addr, 0, 0, 0, 0, 0, 0, &smccc_res);
+			// printk(KERN_INFO "do_page_fault finished! now addr/paddr = 0x%lx/0x%lx\n\n", addr, smccc_res.a0);
 		}
 		return 0;
 	}
