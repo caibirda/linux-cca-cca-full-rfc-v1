@@ -104,7 +104,7 @@
 	sub	sp, sp, x0
 	mrs	x0, tpidrro_el0
 #endif
-	.if \el ==0
+	.if \el == 0
 	.if \regsize == 64
 	str	lr, [sp, #S_LR]
 	bl check_func_\label
@@ -524,26 +524,13 @@ alternative_else_nop_endif
 	ldp	x28, x29, [sp, #16 * 14]
 
 	.if	\el == 0
-	ldr_this_cpu tsk, __entry_task, x20
-	ldr	x21, [tsk, #TSK_IS_SHELTER]
-	cbnz x21, 7f // shelter_enter
-	ldp	x0, x1, [sp, #16 * 0]
-	ldp	x2, x3, [sp, #16 * 1]
-	ldp	x4, x5, [sp, #16 * 2]
-	ldp	x6, x7, [sp, #16 * 3]
-	ldp	x8, x9, [sp, #16 * 4]
-	ldp	x10, x11, [sp, #16 * 5]
-	ldp	x12, x13, [sp, #16 * 6]
-	ldp	x14, x15, [sp, #16 * 7]
-	ldp	x16, x17, [sp, #16 * 8]
-	ldp	x18, x19, [sp, #16 * 9]
-	ldp	x20, x21, [sp, #16 * 10]
-	ldp	x22, x23, [sp, #16 * 11]
-	ldp	x24, x25, [sp, #16 * 12]
-	ldp	x26, x27, [sp, #16 * 13]
+	ldr_this_cpu x28, __entry_task, x29
+    ldr	x29, [x28, #TSK_IS_SHELTER]
+	cbnz x29, 7f // shelter_enter
 	ldp	x28, x29, [sp, #16 * 14]
 
 alternative_if_not ARM64_UNMAP_KERNEL_AT_EL0
+shelter_enter_exit:
 	ldr	lr, [sp, #S_LR]
 	add	sp, sp, #PT_REGS_SIZE		// restore sp
 	eret
@@ -567,7 +554,11 @@ alternative_else_nop_endif
 	eret
 	.endif
 	sb
-7:	//shelter_enter
+7:	// shelter_enter
+	mov	x17, x0
+	mov	x0, #0x80000000
+	add	x0, x0,	#0xFF1
+	smc	#0
 	ldp	x0, x1, [sp, #16 * 0]
 	ldp	x2, x3, [sp, #16 * 1]
 	ldp	x4, x5, [sp, #16 * 2]
@@ -583,12 +574,7 @@ alternative_else_nop_endif
 	ldp	x24, x25, [sp, #16 * 12]
 	ldp	x26, x27, [sp, #16 * 13]
 	ldp	x28, x29, [sp, #16 * 14]
-	ldr	lr, [sp, #S_LR]
-	add	sp, sp, #PT_REGS_SIZE		// restore sp
-	mov	x17, x0
-	mov	x0, #0x80000000
-	add	x0, x0,	#0xFF1
-	smc	#0
+	b	shelter_enter_exit
 
 	.endm
 

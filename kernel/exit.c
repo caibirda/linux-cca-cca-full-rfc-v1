@@ -922,7 +922,7 @@ void __noreturn do_exit(long code)
 		struct pt_regs *task_regs = task_pt_regs(get_current());
 		printk(KERN_INFO "pid %d do_exit, pc = 0x%llx, sp = 0x%llx\n", current->pid, task_regs->pc, task_regs->sp);
 		struct arm_smccc_res smccc_res;
-		arm_smccc_smc(0x80000FFF, (unsigned long) tsk, tsk->pid, 0, 0, 0, 0, 0, &smccc_res);
+		arm_smccc_smc(0x80000FFF, 0, 0, 0, 0, 0, 0, 0, &smccc_res);
 	}
 	lockdep_free_task(tsk);
 	do_task_dead();

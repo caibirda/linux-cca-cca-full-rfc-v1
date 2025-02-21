@@ -149,7 +149,6 @@ static int padzero(unsigned long elf_bss)
 		if (current->is_shelter && current->wait_alloc) {
 			printk(KERN_INFO "padzero: addr/elf_bss = 0x%lx, len/nbyte = 0x%lx\n", elf_bss, nbyte);
 			current->wait_page_fault = 1;
-			// arm_smccc_smc(0x80000FF5, elf_bss & PAGE_MASK, nbyte, current->pid, 0, 0, 0, 0, &smccc_res); // SET_NORMAL
 		}
 		if (clear_user((void __user *) elf_bss, nbyte)) {
 			printk(KERN_ERR "padzero failed!\n");
@@ -383,9 +382,9 @@ static unsigned long elf_map(struct file *filep, unsigned long addr,
 		const struct elf_phdr *eppnt, int prot, int type,
 		unsigned long total_size)
 {
-	if (current->is_shelter || current->is_debug) {
-		printk(KERN_INFO "\ncall elf_map in binfmt_elf.c\n");
-	}
+	// if (current->is_shelter || current->is_debug) {
+	// 	// printk(KERN_INFO "\ncall elf_map in binfmt_elf.c\n");
+	// }
 	unsigned long map_addr;
 	unsigned long size = eppnt->p_filesz + ELF_PAGEOFFSET(eppnt->p_vaddr);
 	unsigned long off = eppnt->p_offset - ELF_PAGEOFFSET(eppnt->p_vaddr);

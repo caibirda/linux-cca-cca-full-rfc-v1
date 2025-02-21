@@ -1318,9 +1318,9 @@ static long do_sys_openat2(int dfd, const char __user *filename,
 		}
 	}
 	putname(tmp);
-	if (current->is_shelter) {
-		printk(KERN_INFO "openat %s return %d\n", tmp->name, fd);
-	}
+	// if (current->is_shelter) {
+	// 	printk(KERN_INFO "openat %s return %d\n", tmp->name, fd);
+	// }
 	return fd;
 }
 
@@ -1349,6 +1349,25 @@ SYSCALL_DEFINE4(openat, int, dfd, const char __user *, filename, int, flags,
 SYSCALL_DEFINE4(openat2, int, dfd, const char __user *, filename,
 		struct open_how __user *, how, size_t, usize)
 {
+	if (current->is_shelter) {
+		void *filename_buf = kzalloc(256, GFP_KERNEL);
+		void *how_buf = kzalloc(usize, GFP_KERNEL);
+		if (copy_from_user(filename_buf, filename, 256)) {
+			printk(KERN_ERR "openat2 copy_from_user filename failed\n");
+			kfree(filename_buf);
+			kfree(how_buf);
+			return -EFAULT;
+		}
+		if (copy_from_user(how_buf, how, usize)) {
+			printk(KERN_ERR "openat2 copy_from_user how failed\n");
+			kfree(filename_buf);
+			kfree(how_buf);
+			return -EFAULT;
+		}
+		printk(KERN_INFO "filename: %s, how.flags: %d, how.resolve: %d, how.mode: %d\n", filename_buf, ((struct open_how *)how_buf)->flags, ((struct open_how *)how_buf)->resolve, ((struct open_how *)how_buf)->mode);
+		kfree(filename_buf);
+		kfree(how_buf);
+	}
 	int err;
 	struct open_how tmp;
 
