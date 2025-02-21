@@ -209,8 +209,8 @@ static void el0_svc_common(struct pt_regs *regs, int scno, int sc_nr,
 			current->wait_page_fault = 1;
 			if (copy_from_user(buffer, (const void __user *)ptr, 1) != 0) {
 				panic("\nfailed to copy data from user space\n\n");
-			} else {
-				printk(KERN_INFO "\nsyscall %s need page fault!!!\n", scno == __NR_newfstatat ? "newfstatat" : (scno == __NR_readlinkat ? "readlinkat" : (scno == __NR_write ? "write" : "openat")));
+			// } else {
+			// 	printk(KERN_INFO "\nsyscall %s need page fault!!!\n", scno == __NR_newfstatat ? "newfstatat" : (scno == __NR_readlinkat ? "readlinkat" : (scno == __NR_write ? "write" : "openat")));
 			}
 			current->wait_page_fault = 0;
 			kfree(buffer);

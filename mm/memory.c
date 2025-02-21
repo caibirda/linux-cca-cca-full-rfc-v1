@@ -3341,10 +3341,13 @@ static vm_fault_t do_wp_page(struct vm_fault *vmf)
 	__releases(vmf->ptl)
 {
 	struct arm_smccc_res smccc_res;
-	// if (current->is_shelter && current->gpt_id != 0) {
-	// 	arm_smccc_smc(0x80000FF2, vmf->address, 0, 0, 0, 0, 0, 0, &smccc_res);
-	// 	printk(KERN_INFO "\ndo_wp_page pid: %d, addr/paddr: 0x%lx/0x%lx\n", current->pid, vmf->address, smccc_res.a0);
-	// }
+	if (current->is_shelter && current->gpt_id != 0) {
+		// arm_smccc_smc(0x80000FF2, vmf->address, 0, 0, 0, 0, 0, 0, &smccc_res);
+		// printk(KERN_INFO "\ndo_wp_page pid: %d, addr/paddr: 0x%lx/0x%lx\n", current->pid, vmf->address, smccc_res.a0);
+		// printk(KERN_INFO "\ndo_wp_page pid: %d, addr: 0x%lx\n", current->pid, vmf->address);
+		arm_smccc_smc(0x80000FF5, vmf->address & PAGE_MASK, PAGE_SIZE, 0, 0, 0, 0, 0, &smccc_res); // SET_NORMAL
+		current->do_wp_page = 1;
+	}
 	const bool unshare = vmf->flags & FAULT_FLAG_UNSHARE;
 	struct vm_area_struct *vma = vmf->vma;
 	struct folio *folio = NULL;
@@ -3450,17 +3453,7 @@ copy:
 	if (folio && folio_test_ksm(folio))
 		count_vm_event(COW_KSM);
 #endif
-	if (current->is_shelter && current->gpt_id != 0) {
-		// printk(KERN_INFO "before wp_page_copy addr: 0x%lx, set NORMAL for kernel\n", vmf->address);
-		arm_smccc_smc(0x80000FF5, vmf->address & PAGE_MASK, PAGE_SIZE, 0, 0, 0, 0, 0, &smccc_res); // SET_NORMAL
-		current->do_wp_page = 1;
-	}
-	vm_fault_t res = wp_page_copy(vmf);
-	// if (current->is_shelter && current->gpt_id != 0) {
-	// 	arm_smccc_smc(0x80000FF2, vmf->address, 0, 0, 0, 0, 0, 0, &smccc_res);
-	// 	printk(KERN_INFO "after wp_page_copy, addr/paddr: 0x%lx/0x%lx\n", vmf->address, smccc_res.a0);
-	// }
-	return res;
+	return wp_page_copy(vmf);
 }
 
 static void unmap_mapping_range_vma(struct vm_area_struct *vma,
