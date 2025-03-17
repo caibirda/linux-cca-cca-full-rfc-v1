@@ -1248,14 +1248,14 @@ out_unlock:
 
 SYSCALL_DEFINE3(dup3, unsigned int, oldfd, unsigned int, newfd, int, flags)
 {
-	if (current->is_shelter && newfd == current->fd_cma) {
-		// printk(KERN_INFO "\nsyscall dup3(%d, %d, %d), newfd = current->fd_cma = %d\n", oldfd, newfd, flags, newfd);
-		struct fd f = fdget(newfd);
-		// printk(KERN_INFO "current->fd_cma: %d, newfd: %u, filename: %s\n", current->fd_cma, newfd, f.file->f_path.dentry->d_name.name);
-		if (strncmp(f.file->f_path.dentry->d_name.name, "SHELTER", 7) == 0) {
-			panic("pid %d wants to close SHELTER in dup3!!!\n\n", current->pid);
-		}
-	}
+	// if (current->is_shelter && newfd == current->fd_cma) {
+	// 	// printk(KERN_INFO "\nsyscall dup3(%d, %d, %d), newfd = current->fd_cma = %d\n", oldfd, newfd, flags, newfd);
+	// 	struct fd f = fdget(newfd);
+	// 	// printk(KERN_INFO "current->fd_cma: %d, newfd: %u, filename: %s\n", current->fd_cma, newfd, f.file->f_path.dentry->d_name.name);
+	// 	if (strncmp(f.file->f_path.dentry->d_name.name, "SHELTER", 7) == 0) {
+	// 		panic("pid %d wants to close SHELTER in dup3!!!\n\n", current->pid);
+	// 	}
+	// }
 	return ksys_dup3(oldfd, newfd, flags);
 }
 

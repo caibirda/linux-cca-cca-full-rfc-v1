@@ -3699,7 +3699,7 @@ vm_fault_t do_swap_page(struct vm_fault *vmf)
 {
 	if (current->is_shelter && current->gpt_id != 0) {
 		printk(KERN_INFO "\ndo_swap_page pid: %d, addr: 0x%lx\n", current->pid, vmf->address);
-		panic("\nnot support do_swap_page\n");
+		// panic("\nnot support do_swap_page\n");
 	}
 	struct vm_area_struct *vma = vmf->vma;
 	struct folio *swapcache, *folio = NULL;
@@ -4620,7 +4620,7 @@ static vm_fault_t do_shared_fault(struct vm_fault *vmf)
 	if (current->is_shelter && current->gpt_id != 0) {
 		printk(KERN_INFO "\ndo_shared_fault addr: 0x%lx\n", vmf->address);
 		current->do_shared_fault = 1;
-		panic("\ndo_shared_fault is not tested\n");
+		// panic("\ndo_shared_fault is not tested\n");
 	}
 	struct vm_area_struct *vma = vmf->vma;
 	vm_fault_t ret, tmp;
@@ -4737,7 +4737,7 @@ static vm_fault_t do_numa_page(struct vm_fault *vmf)
 {
 	if (current->is_shelter && current->gpt_id != 0) {
 		printk(KERN_INFO "\ndo_numa_page addr: 0x%lx\n", vmf->address);
-		panic("\nnot support do_numa_page\n");
+		// panic("\nnot support do_numa_page\n");
 	}
 	struct vm_area_struct *vma = vmf->vma;
 	struct page *page = NULL;

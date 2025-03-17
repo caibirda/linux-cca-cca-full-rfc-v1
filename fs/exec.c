@@ -871,8 +871,8 @@ out_unlock:
 		unsigned long shelter_stack_start = vma->vm_start;
 		unsigned long shelter_stack_end = vma->vm_end - ((vma->vm_end - mm->arg_start + 0x00fff) & 0xfffff000);
 		printk(KERN_INFO "shelter_stack_start = 0x%lx, end = 0x%lx\n", shelter_stack_start, shelter_stack_end);
-		size_t stacksize = shelter_stack_end - shelter_stack_start;
-		unsigned long map_addr = ksys_mmap_pgoff(shelter_stack_start, stacksize, PROT_READ | PROT_WRITE, MAP_FIXED | MAP_PRIVATE, current->fd_cma, 0);
+		// size_t stacksize = shelter_stack_end - shelter_stack_start;
+		// unsigned long map_addr = ksys_mmap_pgoff(shelter_stack_start, stacksize, PROT_READ | PROT_WRITE, MAP_FIXED | MAP_PRIVATE, current->fd_cma, 0);
 	}
 	return ret;
 }
