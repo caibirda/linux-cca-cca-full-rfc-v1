@@ -881,11 +881,7 @@ static int get_sigframe(struct rt_sigframe_user_layout *user,
 	if (err)
 		return err;
 
-	if (current->is_shelter) {
-		sp = sp_top = current->task_signal_stack_virt + SHELTER_TASK_SIGNAL_STACK_LENGTH;
-		printk(KERN_INFO "signal.c: set sp/sp_top in get_sigframe\n");
-	} else
-		sp = sp_top = sigsp(regs->sp, ksig);
+	sp = sp_top = sigsp(regs->sp, ksig);
 
 	sp = round_down(sp - sizeof(struct frame_record), 16);
 	user->next_frame = (struct frame_record __user *)sp;
@@ -1040,7 +1036,6 @@ static void handle_signal(struct ksignal *ksig, struct pt_regs *regs)
  */
 static void do_signal(struct pt_regs *regs)
 {
-	// int syscallno = regs->syscallno;
 	unsigned long continue_addr = 0, restart_addr = 0;
 	int retval = 0;
 	struct ksignal ksig;

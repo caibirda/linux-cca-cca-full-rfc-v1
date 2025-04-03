@@ -839,11 +839,6 @@ int setup_arg_pages(struct linux_binprm *bprm,
 	vma->vm_flags &= ~VM_STACK_INCOMPLETE_SETUP;
 
 	stack_expand = 131072UL; /* randomly 32*4k (or 2*64k) pages */
-	if (current->is_shelter) {
-		// printk(KERN_INFO "stack_expand = 1048576 in setup_arg_pages from exec.c\n");
-		stack_expand = 1048576UL; // 256 pages;
-	}
-		
 	stack_size = vma->vm_end - vma->vm_start;
 	/*
 	 * Align this down to a page boundary as expand_stack
@@ -865,15 +860,6 @@ int setup_arg_pages(struct linux_binprm *bprm,
 
 out_unlock:
 	mmap_write_unlock(mm);
-	// 1.stack; allocate cma memory to the first vma expand stack and construct page tables
-	// If epxand stack later use, we still use cma memory to allocate page in page fault handler
-	if (current->is_shelter) {	
-		unsigned long shelter_stack_start = vma->vm_start;
-		unsigned long shelter_stack_end = vma->vm_end - ((vma->vm_end - mm->arg_start + 0x00fff) & 0xfffff000);
-		printk(KERN_INFO "shelter_stack_start = 0x%lx, end = 0x%lx\n", shelter_stack_start, shelter_stack_end);
-		// size_t stacksize = shelter_stack_end - shelter_stack_start;
-		// unsigned long map_addr = ksys_mmap_pgoff(shelter_stack_start, stacksize, PROT_READ | PROT_WRITE, MAP_FIXED | MAP_PRIVATE, current->fd_cma, 0);
-	}
 	return ret;
 }
 EXPORT_SYMBOL(setup_arg_pages);

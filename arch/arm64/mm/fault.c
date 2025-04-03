@@ -707,8 +707,6 @@ retry:
 				// arm_smccc_smc(0x80000FF6, addr & PAGE_MASK, PAGE_SIZE, current->pid, 0, 0, 0, 0, &smccc_res); // SET_ROOT
 				arm_smccc_smc(0x80000FF9, 0, 0, 0, 0, 0, 0, 0, &smccc_res); // VOID
 				current->do_shared_fault = 0;
-			} else {
-				printk(KERN_INFO "not handled case occurs, addr = 0x%lx\n\n", addr);
 			}
 			// arm_smccc_smc(0x80000FF2, addr, 0, 0, 0, 0, 0, 0, &smccc_res);
 			// printk(KERN_INFO "do_page_fault finished! now addr/paddr = 0x%lx/0x%lx\n\n", addr, smccc_res.a0);
